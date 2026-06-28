@@ -23,8 +23,14 @@ require_once __DIR__ . '/lib/auth.php';
 cors();
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$path   = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
-// Si la API quedara en un subdirectorio, quita el prefijo aquí (ej. 'api/').
+// Ruta relativa a la ubicación de index.php, así funciona igual si la API
+// queda en la raíz del webroot o dentro de una subcarpeta (ej. /api).
+$uriPath   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($scriptDir !== '' && strpos($uriPath, $scriptDir) === 0) {
+  $uriPath = substr($uriPath, strlen($scriptDir));
+}
+$path = trim($uriPath, '/');
 
 // ---------- Health ----------
 if ($method === 'GET' && $path === '') {

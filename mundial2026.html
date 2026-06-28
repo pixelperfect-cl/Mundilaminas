@@ -322,10 +322,10 @@ body {
  *   - 11 láminas FIFA Museum (leyendas / campeones del pasado)
  *   - 48 equipos × 20 láminas = 960
  *
- * IMPORTANTE: el orden de grupos (A-L) y los nombres de equipos son un
- * "mejor esfuerzo" basado en el sorteo del Mundial 2026. Puedes editar
- * cualquier nombre desde la app (botón ✏️) para que calce exactamente con
- * tu álbum físico. La numeración se recalcula sola.
+ * Los 48 equipos y sus grupos (A-L) corresponden al SORTEO FINAL OFICIAL
+ * del Mundial 2026 (Washington D.C., 5 dic 2025), con los repechajes ya
+ * resueltos. Igual puedes editar cualquier equipo desde la app (botón ✏️)
+ * para que calce exactamente con tu álbum físico. La numeración se recalcula sola.
  *
  * Numeración usada:
  *   Intro:        1 – 9
@@ -366,19 +366,21 @@ const MUSEUM_STICKERS = [
   'FIFA Museum 11',
 ];
 
-// 48 equipos agrupados por grupo (A-L). EDITABLE desde la app.
-// Cada objeto: { group: 'A', name: 'México', code: 'MEX' }
+// 48 equipos agrupados por grupo (A-L) según el SORTEO FINAL OFICIAL
+// (Washington D.C., 5 dic 2025) con los repechajes ya resueltos.
+// EDITABLE desde la app. Cada objeto: { group: 'A', name: 'México', code: 'MEX' }
+// Orden dentro de cada grupo: por bombo (cabeza de serie primero).
 const TEAMS = [
   // Grupo A
   { group: 'A', name: 'México', code: 'MEX' },
-  { group: 'A', name: 'Sudáfrica', code: 'RSA' },
   { group: 'A', name: 'Corea del Sur', code: 'KOR' },
-  { group: 'A', name: 'Rep. Checa', code: 'CZE' },
+  { group: 'A', name: 'Sudáfrica', code: 'RSA' },
+  { group: 'A', name: 'Chequia', code: 'CZE' },
   // Grupo B
   { group: 'B', name: 'Canadá', code: 'CAN' },
   { group: 'B', name: 'Suiza', code: 'SUI' },
   { group: 'B', name: 'Catar', code: 'QAT' },
-  { group: 'B', name: 'Bosnia', code: 'BIH' },
+  { group: 'B', name: 'Bosnia y Herzegovina', code: 'BIH' },
   // Grupo C
   { group: 'C', name: 'Brasil', code: 'BRA' },
   { group: 'C', name: 'Marruecos', code: 'MAR' },
@@ -386,24 +388,24 @@ const TEAMS = [
   { group: 'C', name: 'Haití', code: 'HAI' },
   // Grupo D
   { group: 'D', name: 'Estados Unidos', code: 'USA' },
-  { group: 'D', name: 'Paraguay', code: 'PAR' },
   { group: 'D', name: 'Australia', code: 'AUS' },
+  { group: 'D', name: 'Paraguay', code: 'PAR' },
   { group: 'D', name: 'Turquía', code: 'TUR' },
   // Grupo E
-  { group: 'E', name: 'Argentina', code: 'ARG' },
-  { group: 'E', name: 'Argelia', code: 'ALG' },
-  { group: 'E', name: 'Austria', code: 'AUT' },
-  { group: 'E', name: 'Jordania', code: 'JOR' },
+  { group: 'E', name: 'Alemania', code: 'GER' },
+  { group: 'E', name: 'Ecuador', code: 'ECU' },
+  { group: 'E', name: 'Costa de Marfil', code: 'CIV' },
+  { group: 'E', name: 'Curazao', code: 'CUW' },
   // Grupo F
   { group: 'F', name: 'Países Bajos', code: 'NED' },
   { group: 'F', name: 'Japón', code: 'JPN' },
   { group: 'F', name: 'Túnez', code: 'TUN' },
-  { group: 'F', name: 'Nueva Zelanda', code: 'NZL' },
+  { group: 'F', name: 'Suecia', code: 'SWE' },
   // Grupo G
   { group: 'G', name: 'Bélgica', code: 'BEL' },
-  { group: 'G', name: 'Egipto', code: 'EGY' },
   { group: 'G', name: 'Irán', code: 'IRN' },
-  { group: 'G', name: 'Costa Rica', code: 'CRC' },
+  { group: 'G', name: 'Egipto', code: 'EGY' },
+  { group: 'G', name: 'Nueva Zelanda', code: 'NZL' },
   // Grupo H
   { group: 'H', name: 'España', code: 'ESP' },
   { group: 'H', name: 'Uruguay', code: 'URU' },
@@ -415,20 +417,20 @@ const TEAMS = [
   { group: 'I', name: 'Noruega', code: 'NOR' },
   { group: 'I', name: 'Irak', code: 'IRQ' },
   // Grupo J
-  { group: 'J', name: 'Alemania', code: 'GER' },
-  { group: 'J', name: 'Colombia', code: 'COL' },
-  { group: 'J', name: 'Costa de Marfil', code: 'CIV' },
-  { group: 'J', name: 'Panamá', code: 'PAN' },
+  { group: 'J', name: 'Argentina', code: 'ARG' },
+  { group: 'J', name: 'Austria', code: 'AUT' },
+  { group: 'J', name: 'Argelia', code: 'ALG' },
+  { group: 'J', name: 'Jordania', code: 'JOR' },
   // Grupo K
   { group: 'K', name: 'Portugal', code: 'POR' },
-  { group: 'K', name: 'RD Congo', code: 'COD' },
+  { group: 'K', name: 'Colombia', code: 'COL' },
   { group: 'K', name: 'Uzbekistán', code: 'UZB' },
-  { group: 'K', name: 'Ecuador', code: 'ECU' },
+  { group: 'K', name: 'RD Congo', code: 'COD' },
   // Grupo L
   { group: 'L', name: 'Inglaterra', code: 'ENG' },
   { group: 'L', name: 'Croacia', code: 'CRO' },
+  { group: 'L', name: 'Panamá', code: 'PAN' },
   { group: 'L', name: 'Ghana', code: 'GHA' },
-  { group: 'L', name: 'Nigeria', code: 'NGA' },
 ];
 
 const STICKERS_PER_TEAM = 20;
@@ -448,6 +450,7 @@ const FIFA_TO_ISO2 = {
   GER: 'DE', COL: 'CO', CIV: 'CI', PAN: 'PA',
   POR: 'PT', COD: 'CD', UZB: 'UZ', ECU: 'EC',
   CRO: 'HR', GHA: 'GH', NGA: 'NG',
+  CUW: 'CW', SWE: 'SE',
 };
 
 // Banderas de subdivisiones del Reino Unido (no tienen código ISO alpha-2).

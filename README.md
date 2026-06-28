@@ -35,10 +35,10 @@ No necesita instalación ni servidor. Abre `index.html` en el navegador del tel�
 
 Cada equipo trae 20 láminas: **escudo** (✨ brillante), **plantel**, y **18 jugadores**.
 
-> ⚠️ **Sobre los equipos y grupos**: el orden de grupos (A–L) y los nombres son un
-> *mejor esfuerzo* basado en el sorteo del Mundial 2026; las fuentes detalladas de
-> Panini estaban bloqueadas al armar esto. **Verifica contra tu álbum físico** y corrige
-> lo que no calce desde **⚙️ Menú → Editar equipos**.
+> ✅ **Equipos y grupos**: corresponden al **sorteo final oficial** del Mundial 2026
+> (Washington D.C., 5 dic 2025) con los repechajes ya resueltos. Si algo no calza con
+> tu álbum físico, lo corriges desde **⚙️ Menú → Editar equipos** (la numeración se
+> recalcula sola y tus marcas se conservan).
 
 ## Datos / privacidad
 

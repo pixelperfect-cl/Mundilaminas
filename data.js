@@ -136,6 +136,24 @@ const FIFA_TO_ISO2 = {
   CUW: 'CW', SWE: 'SE',
 };
 
+// Nombres en inglés (como aparecen en el álbum) por código, para que la
+// búsqueda encuentre el equipo aunque escribas "Algeria" en vez de "Argelia".
+// Se incluyen variantes comunes separadas por espacio.
+const EN_NAMES = {
+  MEX: 'Mexico', RSA: 'South Africa', KOR: 'Korea Republic', CZE: 'Czechia Czech',
+  CAN: 'Canada', BIH: 'Bosnia Herzegovina', QAT: 'Qatar', SUI: 'Switzerland',
+  BRA: 'Brazil', MAR: 'Morocco', HAI: 'Haiti', SCO: 'Scotland',
+  USA: 'USA United States', PAR: 'Paraguay', AUS: 'Australia', TUR: 'Turkiye Turkey',
+  GER: 'Germany', CUW: 'Curacao', CIV: "Cote d'Ivoire Ivory Coast", ECU: 'Ecuador',
+  NED: 'Netherlands Holland', JPN: 'Japan', SWE: 'Sweden', TUN: 'Tunisia',
+  BEL: 'Belgium', EGY: 'Egypt', IRN: 'Iran', NZL: 'New Zealand',
+  ESP: 'Spain', CPV: 'Cabo Verde Cape Verde', KSA: 'Saudi Arabia', URU: 'Uruguay',
+  FRA: 'France', SEN: 'Senegal', IRQ: 'Iraq', NOR: 'Norway',
+  ARG: 'Argentina', ALG: 'Algeria', AUT: 'Austria', JOR: 'Jordan',
+  POR: 'Portugal', COD: 'Congo DR DR Congo', UZB: 'Uzbekistan', COL: 'Colombia',
+  ENG: 'England', CRO: 'Croatia', GHA: 'Ghana', PAN: 'Panama',
+};
+
 // Banderas de subdivisiones del Reino Unido (no tienen código ISO alpha-2).
 const SPECIAL_FLAGS = {
   SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', // 🏴 Escocia
@@ -218,6 +236,8 @@ function buildAlbum(teams) {
         label,
         sectionId,
         sectionTitle: title,
+        // texto extra para búsqueda: código + nombre en inglés (no se muestra)
+        aka: `${team.code || ''} ${EN_NAMES[team.code] || ''}`.toLowerCase(),
       };
       section.stickers.push(s);
       stickers.push(s);

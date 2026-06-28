@@ -70,7 +70,8 @@
     if (search) {
       const q = search.toLowerCase();
       if (!String(s.disp).includes(q) && !s.label.toLowerCase().includes(q) &&
-          !s.sectionTitle.toLowerCase().includes(q)) return false;
+          !s.sectionTitle.toLowerCase().includes(q) &&
+          !(s.aka || '').includes(q)) return false;
     }
     return true;
   }

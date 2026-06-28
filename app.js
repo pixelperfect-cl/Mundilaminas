@@ -6,6 +6,17 @@
   const LS_COUNTS = 'wc26-counts';
   const LS_TEAMS = 'wc26-teams';
   const LS_OPEN = 'wc26-open-sections';
+  const LS_TOKEN = 'wc26-token';
+  const LS_USER = 'wc26-user';
+  const LS_DIRTY = 'wc26-dirty';
+  const LS_API = 'wc26-api';
+  const LS_GID = 'wc26-gid';
+
+  // Configuración de la nube. Estos valores por defecto se rellenan una vez
+  // (al desplegar): URL de la API en Cloudways y Client ID de Google.
+  // También se pueden setear desde el menú (se guardan en localStorage).
+  const DEFAULT_API_BASE = 'https://phpstack-1279051-6519515.cloudwaysapps.com';
+  const DEFAULT_CLIENT_ID = '';  // ← pega aquí el Client ID de Google cuando lo crees
 
   // ---------- Estado ----------
   let counts = loadJSON(LS_COUNTS, {});            // { stickerKey: copiasQueTengo }
@@ -28,6 +39,24 @@
     n = Math.max(0, n | 0);
     if (n === 0) delete counts[key]; else counts[key] = n;
     saveJSON(LS_COUNTS, counts);
+    markDirty(key);   // para sincronizar con la nube si hay sesión
+  }
+
+  // ---------- Mapas key <-> sid (para sincronizar) ----------
+  let keyToSid = {}, sidToKey = {};
+  function rebuildSidMaps() {
+    keyToSid = {}; sidToKey = {};
+    album.stickers.forEach((s) => {
+      if (!s.sid) return;
+      keyToSid[s.key] = s.sid;
+      sidToKey[s.sid] = s.key;
+    });
+  }
+  function stickerBySid(sid) { return album.stickers.find((s) => s.sid === sid) || null; }
+  function countsBySid() {
+    const out = {};
+    album.stickers.forEach((s) => { const c = getCount(s.key); if (c > 0 && s.sid) out[s.sid] = c; });
+    return out;
   }
 
   // ---------- Cálculos ----------
@@ -234,6 +263,7 @@
     el('statMissing').textContent = st.missing;
     el('statRepes').textContent = st.repesTotal;
     renderTeamEditor();
+    updateCloudUI();
     el('modalMenu').classList.add('open');
   }
 
@@ -261,6 +291,7 @@
   function saveTeams() {
     saveJSON(LS_TEAMS, teams);
     album = CFG.buildAlbum(teams);   // re-numera, mantiene counts por key estable
+    rebuildSidMaps();
     render();
     closeModals();
     toast('Equipos guardados ✓');
@@ -271,6 +302,7 @@
     teams = clone(CFG.DEFAULT_TEAMS);
     saveJSON(LS_TEAMS, teams);
     album = CFG.buildAlbum(teams);
+    rebuildSidMaps();
     renderTeamEditor();
     render();
     toast('Equipos restaurados');
@@ -298,9 +330,15 @@
         saveJSON(LS_COUNTS, counts);
         saveJSON(LS_TEAMS, teams);
         album = CFG.buildAlbum(teams);
+        rebuildSidMaps();
         render();
         closeModals();
         toast('Respaldo importado ✓');
+        if (loggedIn() && cloudConfigured()) {   // subir lo importado a la nube
+          dirty = new Set(Object.keys(countsBySid()));
+          saveJSON(LS_DIRTY, [...dirty]);
+          flushDirty();
+        }
       } catch {
         alert('No se pudo leer el archivo. ¿Es un respaldo válido?');
       }
@@ -315,6 +353,7 @@
     localStorage.removeItem(LS_TEAMS);
     localStorage.removeItem(LS_OPEN);
     album = CFG.buildAlbum(teams);
+    rebuildSidMaps();
     render(); closeModals(); toast('Todo reiniciado');
   }
 
@@ -354,6 +393,198 @@
     return String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   }
 
+  // ===================================================================
+  // ==========   NUBE: cuenta Google + sincronización + amigos   ======
+  // ===================================================================
+  let authToken = localStorage.getItem(LS_TOKEN) || '';
+  let me = loadJSON(LS_USER, null);
+  let dirty = new Set(loadJSON(LS_DIRTY, []));
+  let flushTimer = null, googleReady = false;
+
+  function apiBase() { return (localStorage.getItem(LS_API) || DEFAULT_API_BASE || '').replace(/\/+$/, ''); }
+  function clientId() { return localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || ''; }
+  function cloudConfigured() { return !!apiBase(); }
+  function loggedIn() { return !!authToken && !!me; }
+
+  function markDirty(key) {
+    const sid = keyToSid[key];
+    if (!sid) return;
+    dirty.add(sid);
+    saveJSON(LS_DIRTY, [...dirty]);
+    if (loggedIn() && cloudConfigured()) scheduleFlush();
+  }
+  function scheduleFlush() { clearTimeout(flushTimer); flushTimer = setTimeout(flushDirty, 1200); }
+
+  async function api(path, { method = 'GET', body = null, auth = true } = {}) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (auth && authToken) headers['Authorization'] = 'Bearer ' + authToken;
+    const res = await fetch(apiBase() + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    let data = null; try { data = await res.json(); } catch {}
+    if (!res.ok) {
+      if (res.status === 401) clearSession();
+      throw new Error((data && data.error) || ('Error ' + res.status));
+    }
+    return data;
+  }
+
+  async function flushDirty() {
+    if (!loggedIn() || !cloudConfigured() || dirty.size === 0) return;
+    const all = countsBySid(), payload = {};
+    dirty.forEach((sid) => { payload[sid] = all[sid] || 0; });
+    try { await api('/me/collection', { method: 'PUT', body: { counts: payload } }); dirty.clear(); saveJSON(LS_DIRTY, []); }
+    catch (e) { /* se reintenta al próximo cambio o recarga */ }
+  }
+
+  function setSession(token, user) { authToken = token; me = user; localStorage.setItem(LS_TOKEN, token); saveJSON(LS_USER, user); updateCloudUI(); }
+  function clearSession() { authToken = ''; me = null; localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_USER); updateCloudUI(); }
+
+  // -- Google Identity Services --
+  function initGoogle() {
+    if (googleReady || !clientId() || !(window.google && google.accounts && google.accounts.id)) return;
+    google.accounts.id.initialize({ client_id: clientId(), callback: onGoogleCredential });
+    googleReady = true;
+  }
+  function promptGoogle() {
+    if (!cloudConfigured()) { toast('Falta configurar la URL de la API'); return; }
+    if (!clientId()) { toast('Falta el Client ID de Google'); return; }
+    initGoogle();
+    if (!googleReady) { toast('Google aún no carga, reintenta'); return; }
+    const cont = el('gbtn');
+    if (cont) { cont.innerHTML = ''; google.accounts.id.renderButton(cont, { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill' }); }
+    google.accounts.id.prompt();
+  }
+  async function onGoogleCredential(resp) {
+    try {
+      const data = await api('/auth/google', { method: 'POST', auth: false, body: { id_token: resp.credential } });
+      setSession(data.token, data.user);
+      toast('Sesión iniciada ✓');
+      await syncAfterLogin();
+      renderFriends();
+    } catch (e) { toast('No se pudo iniciar sesión'); }
+  }
+  function doLogout() {
+    clearSession();
+    if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+    toast('Sesión cerrada');
+  }
+
+  async function syncAfterLogin() {
+    try {
+      const data = await api('/me');
+      if (data.user) { me = data.user; saveJSON(LS_USER, me); }
+      const server = data.counts || {};
+      let changed = false;
+      album.stickers.forEach((s) => {
+        if (!s.sid) return;
+        const local = getCount(s.key), srv = server[s.sid] || 0, mx = Math.max(local, srv);
+        if (mx !== local) { counts[s.key] = mx; changed = true; }
+      });
+      if (changed) saveJSON(LS_COUNTS, counts);
+      dirty = new Set(Object.keys(countsBySid()));   // subir todo lo combinado
+      saveJSON(LS_DIRTY, [...dirty]);
+      await flushDirty();
+      render();
+      updateCloudUI();
+    } catch (e) { /* offline: seguimos en modo local */ }
+  }
+
+  // -- Amigos --
+  function openFriends() { el('modalFriends').classList.add('open'); updateCloudUI(); if (loggedIn()) renderFriends(); }
+
+  async function renderFriends() {
+    const wrap = el('friendsBody');
+    if (!wrap) return;
+    if (!loggedIn()) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML = '<div class="hint">Cargando…</div>';
+    try {
+      const data = await api('/friends');
+      let html = '';
+      if (data.incoming && data.incoming.length) {
+        html += '<h2 style="font-size:1rem">Solicitudes</h2>';
+        data.incoming.forEach((u) => {
+          html += `<div class="friend-row"><div class="friend-name">${escapeHtml(u.name || u.handle)}<div class="friend-handle">@${escapeHtml(u.handle)}</div></div>
+            <button class="fr-ok fr-accept" data-h="${escapeHtml(u.handle)}">Aceptar</button></div>`;
+        });
+      }
+      html += '<h2 style="font-size:1rem;margin-top:14px">Mis amigos</h2>';
+      if (!data.friends || !data.friends.length) {
+        html += '<p class="hint">Aún no tienes amigos. Comparte tu código y agrega el de otros arriba.</p>';
+      } else {
+        data.friends.forEach((f) => {
+          const u = f.user;
+          html += `<div class="friend-row"><div class="friend-name">${escapeHtml(u.name || u.handle)}
+              <div class="friend-handle">🟢 te da ${f.they_give_me} · 🔵 le das ${f.i_give_them}</div></div>
+            <button class="fr-view fr-view-btn" data-h="${escapeHtml(u.handle)}">Ver</button></div>`;
+        });
+      }
+      wrap.innerHTML = html;
+      wrap.querySelectorAll('.fr-accept').forEach((b) => b.addEventListener('click', () => acceptFriend(b.dataset.h)));
+      wrap.querySelectorAll('.fr-view-btn').forEach((b) => b.addEventListener('click', () => viewMatches(b.dataset.h)));
+    } catch (e) { wrap.innerHTML = '<p class="hint">No se pudo cargar (¿API configurada y desplegada?).</p>'; }
+  }
+  async function addFriend() {
+    const h = (el('friendCode').value || '').trim().replace(/^@/, '');
+    if (!h) return;
+    try {
+      const r = await api('/friends/request', { method: 'POST', body: { handle: h } });
+      toast(r.status === 'accepted' ? '¡Ahora son amigos!' : 'Solicitud enviada');
+      el('friendCode').value = ''; renderFriends();
+    } catch (e) { toast(e.message || 'No se pudo'); }
+  }
+  async function acceptFriend(h) {
+    try { await api('/friends/accept', { method: 'POST', body: { handle: h } }); toast('Amigo aceptado ✓'); renderFriends(); }
+    catch (e) { toast(e.message || 'No se pudo'); }
+  }
+  async function viewMatches(h) {
+    try {
+      const m = await api('/friends/matches?with=' + encodeURIComponent(h));
+      const who = m.with.name || m.with.handle;
+      const txt = sidListText(m.they_give_me, `🟢 ${who} te puede pasar`) + '\n\n' +
+                  sidListText(m.i_give_them, `🔵 Tú le puedes pasar a ${who}`) + '\n\n— Mundial 2026 · Mis Láminas';
+      el('matchTitle').textContent = 'Con ' + who;
+      el('matchOutput').textContent = txt;
+      el('matchOutput').dataset.text = txt;
+      el('modalMatch').classList.add('open');
+    } catch (e) { toast(e.message || 'No se pudo'); }
+  }
+  // Lista de sids -> texto agrupado por equipo (con bandera y página).
+  function sidListText(sids, header) {
+    if (!sids || !sids.length) return header + ':\n(nada)';
+    const bySection = {};
+    sids.forEach((sid) => { const s = stickerBySid(sid); if (s) (bySection[s.sectionId] = bySection[s.sectionId] || []).push(s); });
+    const lines = [header + ' (' + sids.length + '):'];
+    album.sections.forEach((sec) => {
+      const list = bySection[sec.id]; if (!list) return;
+      list.sort((a, b) => a.disp - b.disp);
+      lines.push(sectionLabel(sec) + ': ' + list.map((s) => '#' + s.disp).join(', '));
+    });
+    return lines.join('\n');
+  }
+
+  function updateCloudUI() {
+    const status = el('acctStatus');
+    if (status) {
+      if (loggedIn()) status.innerHTML = `Conectado como <b>${escapeHtml(me.name || me.handle)}</b><br><span class="friend-handle">tu código: @${escapeHtml(me.handle)}</span>`;
+      else if (!cloudConfigured()) status.textContent = 'Nube sin configurar (opcional). Funciona todo en modo local.';
+      else status.textContent = 'No has iniciado sesión.';
+    }
+    const setVal = (id, v) => { const e = el(id); if (e && document.activeElement !== e) e.value = v; };
+    setVal('cfgApi', localStorage.getItem(LS_API) || DEFAULT_API_BASE || '');
+    setVal('cfgGid', localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || '');
+    const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
+    show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
+    const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
+    const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
+    const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
+  }
+  function saveCloudCfg() {
+    const a = (el('cfgApi').value || '').trim().replace(/\/+$/, ''), g = (el('cfgGid').value || '').trim();
+    if (a) localStorage.setItem(LS_API, a); else localStorage.removeItem(LS_API);
+    if (g) localStorage.setItem(LS_GID, g); else localStorage.removeItem(LS_GID);
+    googleReady = false; initGoogle();
+    toast('Configuración guardada'); updateCloudUI();
+  }
+
   // ---------- Eventos ----------
   function bind() {
     el('search').addEventListener('input', (e) => { search = e.target.value.trim(); renderSections(); });
@@ -380,9 +611,27 @@
     el('actSaveTeams').addEventListener('click', saveTeams);
     el('actResetTeams').addEventListener('click', resetTeams);
     el('actResetAll').addEventListener('click', resetAll);
+
+    // Nube / amigos
+    const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
+    on('btnFriends', 'click', openFriends);
+    on('btnLogin', 'click', promptGoogle);
+    on('btnLogout', 'click', doLogout);
+    on('addFriendBtn', 'click', addFriend);
+    on('saveCfgBtn', 'click', saveCloudCfg);
+    on('copyCode', 'click', () => copyText(me ? '@' + me.handle : ''));
+    on('matchWhatsapp', 'click', () => shareWhatsApp(el('matchOutput').dataset.text || ''));
+    on('matchCopy', 'click', () => copyText(el('matchOutput').dataset.text || ''));
   }
 
   // ---------- Init ----------
+  rebuildSidMaps();
   bind();
   render();
+  updateCloudUI();
+  // Inicializa Google y sincroniza si ya hay sesión (cuando todo cargó).
+  window.addEventListener('load', () => {
+    initGoogle();
+    if (loggedIn() && cloudConfigured()) syncAfterLogin();
+  });
 })();

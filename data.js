@@ -192,7 +192,7 @@ function buildAlbum(teams) {
   // Sección Introducción
   const intro = { id: 'intro', title: 'Introducción', kind: 'special', stickers: [] };
   INTRO_STICKERS.forEach((label, i) => {
-    const s = { num: num++, disp: i + 1, key: `intro-${i}`, label, sectionId: 'intro', sectionTitle: 'Introducción' };
+    const s = { num: num++, disp: i + 1, key: `intro-${i}`, sid: `INTRO-${i + 1}`, label, sectionId: 'intro', sectionTitle: 'Introducción' };
     intro.stickers.push(s);
     stickers.push(s);
   });
@@ -201,7 +201,7 @@ function buildAlbum(teams) {
   // Sección FIFA Museum
   const museum = { id: 'museum', title: 'FIFA Museum (Leyendas)', kind: 'special', stickers: [] };
   MUSEUM_STICKERS.forEach((label, i) => {
-    const s = { num: num++, disp: i + 1, key: `museum-${i}`, label, sectionId: 'museum', sectionTitle: 'FIFA Museum' };
+    const s = { num: num++, disp: i + 1, key: `museum-${i}`, sid: `MUSEUM-${i + 1}`, label, sectionId: 'museum', sectionTitle: 'FIFA Museum' };
     museum.stickers.push(s);
     stickers.push(s);
   });
@@ -233,6 +233,7 @@ function buildAlbum(teams) {
         num: num++,           // número global 1..980 (para orden/respaldos)
         disp: slot,           // número que se MUESTRA (1..20 por equipo)
         key: `${sectionId}-${slot}`,
+        sid: `${team.code}-${slot}`,   // id estable para sincronizar entre usuarios
         label,
         sectionId,
         sectionTitle: title,

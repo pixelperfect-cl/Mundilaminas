@@ -143,7 +143,27 @@ body {
   font-weight: 800; font-size: .9rem; color: #fff;
 }
 .btn-lists { background: var(--green); }
+.btn-friends { background: var(--blue); }
 .btn-menu { background: var(--card-2); border: 1px solid var(--line) !important; }
+
+/* ---------- Amigos ---------- */
+.add-friend { display: flex; gap: 6px; margin: 6px 0 4px; }
+.add-friend .search { flex: 1; }
+.add-friend button { flex: none; min-width: 96px; padding: 0 14px; border-radius: 999px; border: none; color: #fff; font-weight: 800; cursor: pointer; }
+.mini-btn {
+  background: var(--card-2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; cursor: pointer; margin-left: 4px;
+}
+.friend-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.friend-name { flex: 1; min-width: 0; font-weight: 700; font-size: .9rem; }
+.friend-handle { font-size: .72rem; color: var(--muted); font-weight: 600; }
+.friend-row button {
+  flex: none; padding: 8px 14px; border-radius: 8px; border: none; color: #fff;
+  font-weight: 800; font-size: .8rem; cursor: pointer;
+}
+.fr-ok { background: var(--green); }
+.fr-view-btn { background: var(--blue); }
+#gbtn { display: flex; justify-content: center; margin: 6px 0; }
 
 /* ---------- Modal ---------- */
 .modal-back {

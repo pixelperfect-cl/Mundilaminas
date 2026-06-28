@@ -36,7 +36,8 @@
 
   <!-- Barra inferior -->
   <nav class="bottom-bar">
-    <button class="btn-lists" id="btnLists">📋 Mis listas</button>
+    <button class="btn-lists" id="btnLists">📋 Listas</button>
+    <button class="btn-friends" id="btnFriends">👥 Amigos</button>
     <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
   </nav>
 
@@ -70,7 +71,21 @@
         <div class="stat"><div class="big" id="statRepes">0</div><div class="lab">Repes</div></div>
       </div>
 
-      <h2 style="font-size:1rem">💾 Respaldo</h2>
+      <h2 style="font-size:1rem">☁️ Cuenta / Nube</h2>
+      <p class="hint" id="acctStatus">Nube sin configurar (opcional).</p>
+      <div id="gbtn"></div>
+      <div class="modal-actions">
+        <button class="act-share" id="btnLogin">Iniciar sesión con Google</button>
+        <button class="act-import" id="btnLogout" style="display:none">Cerrar sesión</button>
+      </div>
+      <details style="margin-top:8px">
+        <summary class="hint">Configuración avanzada (URL de la API · Client ID de Google)</summary>
+        <input class="search" id="cfgApi" placeholder="https://tuapp.cloudwaysapps.com" style="margin-top:8px" />
+        <input class="search" id="cfgGid" placeholder="Client ID de Google" style="margin-top:8px" />
+        <div class="modal-actions"><button class="act-export" id="saveCfgBtn">Guardar configuración</button></div>
+      </details>
+
+      <h2 style="font-size:1rem;margin-top:18px">💾 Respaldo</h2>
       <p class="hint">Tus datos se guardan en este navegador. Descarga un respaldo para no perderlos o pasarlos a otro teléfono.</p>
       <div class="modal-actions">
         <button class="act-export" id="actExport">⬇️ Exportar respaldo</button>
@@ -94,8 +109,39 @@
     </div>
   </div>
 
+  <!-- Modal: Amigos -->
+  <div class="modal-back" id="modalFriends">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2>👥 Amigos</h2>
+      <div id="friendsGate"><p class="hint">Inicia sesión con Google (en ⚙️ Menú → Cuenta) para usar amigos y sincronizar tu colección.</p></div>
+      <p class="hint">Tu código: <b id="myCode">—</b>
+        <button class="mini-btn" id="copyCode">copiar</button>
+      </p>
+      <div class="add-friend">
+        <input class="search" id="friendCode" placeholder="código del amigo (ej. juan-4f2a)" />
+        <button class="act-share" id="addFriendBtn">Agregar</button>
+      </div>
+      <div id="friendsBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Coincidencias con un amigo -->
+  <div class="modal-back" id="modalMatch">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2 id="matchTitle">Coincidencias</h2>
+      <div class="list-output" id="matchOutput"></div>
+      <div class="modal-actions">
+        <button class="act-whatsapp" id="matchWhatsapp">🟢 WhatsApp</button>
+        <button class="act-copy" id="matchCopy">📄 Copiar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>

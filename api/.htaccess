@@ -1,0 +1,13 @@
+RewriteEngine On
+
+# Pasar el header Authorization a PHP (Apache/Cloudways a veces lo oculta)
+RewriteCond %{HTTP:Authorization} ^(.+)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Proteger archivos internos
+RewriteRule ^(lib/|config\.php$|config\.sample\.php$|schema\.sql$|README) - [F,L]
+
+# Enrutar todo lo demás al front-controller
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

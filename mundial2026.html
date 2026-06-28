@@ -98,6 +98,10 @@ body {
   display: grid; place-items: center; font-size: .62rem; font-weight: 800;
   background: var(--card-2); color: var(--muted); border: 1px solid var(--line);
 }
+.flag-emoji {
+  font-size: 1.25rem; line-height: 1; background: transparent; border: none;
+  width: 32px;
+}
 .section-title { flex: 1; min-width: 0; }
 .section-title .name { font-weight: 700; font-size: .96rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .section-title .meta { font-size: .72rem; color: var(--muted); }
@@ -766,8 +770,9 @@ window.ALBUM_CONFIG = {
       const secEl = document.createElement('div');
       secEl.className = 'section' + (isOpen ? ' open' : '');
 
+      const teamFlag = (CFG.flagFor && CFG.flagFor(section.code)) || section.code || '';
       const flag = section.kind === 'team'
-        ? `<div class="flag">${section.code || ''}</div>`
+        ? `<div class="flag flag-emoji">${teamFlag}</div>`
         : `<div class="flag">★</div>`;
 
       const head = document.createElement('div');

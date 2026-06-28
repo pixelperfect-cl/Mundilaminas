@@ -121,9 +121,9 @@
       const secEl = document.createElement('div');
       secEl.className = 'section' + (isOpen ? ' open' : '');
 
-      const teamFlag = (CFG.flagFor && CFG.flagFor(section.code)) || section.code || '';
+      const teamFlag = (CFG.flagFor && CFG.flagFor(section.code)) || '';
       const flag = section.kind === 'team'
-        ? `<div class="flag flag-emoji">${teamFlag}</div>`
+        ? `${teamFlag ? `<div class="flag-emoji">${teamFlag}</div>` : ''}<div class="flag">${section.code || ''}</div>`
         : `<div class="flag">★</div>`;
 
       const head = document.createElement('div');

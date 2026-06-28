@@ -102,7 +102,7 @@
         ${flag}
         <div class="section-title">
           <div class="name">${escapeHtml(section.kind === 'team' ? section.teamName : section.title)}</div>
-          <div class="meta">${section.kind === 'team' ? 'Grupo ' + section.group : section.title}</div>
+          <div class="meta">${section.kind === 'team' ? 'Grupo ' + section.group + (section.page ? ' · pág. ' + section.page : '') : section.title}</div>
         </div>
         <div class="section-mini ${ss.have === ss.total ? 'done' : ''}">${ss.have}/${ss.total}</div>
       `;
@@ -176,7 +176,8 @@
   function sectionLabel(section) {
     if (section.kind !== 'team') return section.title;
     const flag = CFG.flagFor ? CFG.flagFor(section.code) : '';
-    return `${flag ? flag + ' ' : ''}Grupo ${section.group} · ${section.teamName}`;
+    const pg = section.page ? ` (pág. ${section.page})` : '';
+    return `${flag ? flag + ' ' : ''}Grupo ${section.group} · ${section.teamName}${pg}`;
   }
 
   function buildMissingText() {

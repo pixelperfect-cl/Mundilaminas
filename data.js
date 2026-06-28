@@ -50,71 +50,70 @@ const MUSEUM_STICKERS = [
   'FIFA Museum 11',
 ];
 
-// 48 equipos agrupados por grupo (A-L) según el SORTEO FINAL OFICIAL
-// (Washington D.C., 5 dic 2025) con los repechajes ya resueltos.
-// EDITABLE desde la app. Cada objeto: { group: 'A', name: 'México', code: 'MEX' }
-// Orden dentro de cada grupo: por bombo (cabeza de serie primero).
+// 48 equipos en el MISMO ORDEN del álbum físico Panini FIFA World Cup 2026,
+// con la PÁGINA en que empieza cada selección. EDITABLE desde la app.
+// Cada objeto: { group, name, code, page }
 const TEAMS = [
   // Grupo A
-  { group: 'A', name: 'México', code: 'MEX' },
-  { group: 'A', name: 'Corea del Sur', code: 'KOR' },
-  { group: 'A', name: 'Sudáfrica', code: 'RSA' },
-  { group: 'A', name: 'Chequia', code: 'CZE' },
+  { group: 'A', name: 'México', code: 'MEX', page: 8 },
+  { group: 'A', name: 'Sudáfrica', code: 'RSA', page: 10 },
+  { group: 'A', name: 'Corea del Sur', code: 'KOR', page: 12 },
+  { group: 'A', name: 'Chequia', code: 'CZE', page: 14 },
   // Grupo B
-  { group: 'B', name: 'Canadá', code: 'CAN' },
-  { group: 'B', name: 'Suiza', code: 'SUI' },
-  { group: 'B', name: 'Catar', code: 'QAT' },
-  { group: 'B', name: 'Bosnia y Herzegovina', code: 'BIH' },
+  { group: 'B', name: 'Canadá', code: 'CAN', page: 16 },
+  { group: 'B', name: 'Bosnia y Herzegovina', code: 'BIH', page: 18 },
+  { group: 'B', name: 'Catar', code: 'QAT', page: 20 },
+  { group: 'B', name: 'Suiza', code: 'SUI', page: 22 },
   // Grupo C
-  { group: 'C', name: 'Brasil', code: 'BRA' },
-  { group: 'C', name: 'Marruecos', code: 'MAR' },
-  { group: 'C', name: 'Escocia', code: 'SCO' },
-  { group: 'C', name: 'Haití', code: 'HAI' },
+  { group: 'C', name: 'Brasil', code: 'BRA', page: 24 },
+  { group: 'C', name: 'Marruecos', code: 'MAR', page: 26 },
+  { group: 'C', name: 'Haití', code: 'HAI', page: 28 },
+  { group: 'C', name: 'Escocia', code: 'SCO', page: 30 },
   // Grupo D
-  { group: 'D', name: 'Estados Unidos', code: 'USA' },
-  { group: 'D', name: 'Australia', code: 'AUS' },
-  { group: 'D', name: 'Paraguay', code: 'PAR' },
-  { group: 'D', name: 'Turquía', code: 'TUR' },
+  { group: 'D', name: 'Estados Unidos', code: 'USA', page: 32 },
+  { group: 'D', name: 'Paraguay', code: 'PAR', page: 34 },
+  { group: 'D', name: 'Australia', code: 'AUS', page: 36 },
+  { group: 'D', name: 'Turquía', code: 'TUR', page: 38 },
   // Grupo E
-  { group: 'E', name: 'Alemania', code: 'GER' },
-  { group: 'E', name: 'Ecuador', code: 'ECU' },
-  { group: 'E', name: 'Costa de Marfil', code: 'CIV' },
-  { group: 'E', name: 'Curazao', code: 'CUW' },
+  { group: 'E', name: 'Alemania', code: 'GER', page: 40 },
+  { group: 'E', name: 'Curazao', code: 'CUW', page: 42 },
+  { group: 'E', name: 'Costa de Marfil', code: 'CIV', page: 44 },
+  { group: 'E', name: 'Ecuador', code: 'ECU', page: 46 },
   // Grupo F
-  { group: 'F', name: 'Países Bajos', code: 'NED' },
-  { group: 'F', name: 'Japón', code: 'JPN' },
-  { group: 'F', name: 'Túnez', code: 'TUN' },
-  { group: 'F', name: 'Suecia', code: 'SWE' },
+  { group: 'F', name: 'Países Bajos', code: 'NED', page: 48 },
+  { group: 'F', name: 'Japón', code: 'JPN', page: 50 },
+  { group: 'F', name: 'Suecia', code: 'SWE', page: 52 },
+  { group: 'F', name: 'Túnez', code: 'TUN', page: 54 },
   // Grupo G
-  { group: 'G', name: 'Bélgica', code: 'BEL' },
-  { group: 'G', name: 'Irán', code: 'IRN' },
-  { group: 'G', name: 'Egipto', code: 'EGY' },
-  { group: 'G', name: 'Nueva Zelanda', code: 'NZL' },
+  { group: 'G', name: 'Bélgica', code: 'BEL', page: 58 },
+  { group: 'G', name: 'Egipto', code: 'EGY', page: 60 },
+  { group: 'G', name: 'Irán', code: 'IRN', page: 62 },
+  { group: 'G', name: 'Nueva Zelanda', code: 'NZL', page: 64 },
   // Grupo H
-  { group: 'H', name: 'España', code: 'ESP' },
-  { group: 'H', name: 'Uruguay', code: 'URU' },
-  { group: 'H', name: 'Arabia Saudita', code: 'KSA' },
-  { group: 'H', name: 'Cabo Verde', code: 'CPV' },
+  { group: 'H', name: 'España', code: 'ESP', page: 66 },
+  { group: 'H', name: 'Cabo Verde', code: 'CPV', page: 68 },
+  { group: 'H', name: 'Arabia Saudita', code: 'KSA', page: 70 },
+  { group: 'H', name: 'Uruguay', code: 'URU', page: 72 },
   // Grupo I
-  { group: 'I', name: 'Francia', code: 'FRA' },
-  { group: 'I', name: 'Senegal', code: 'SEN' },
-  { group: 'I', name: 'Noruega', code: 'NOR' },
-  { group: 'I', name: 'Irak', code: 'IRQ' },
+  { group: 'I', name: 'Francia', code: 'FRA', page: 74 },
+  { group: 'I', name: 'Senegal', code: 'SEN', page: 76 },
+  { group: 'I', name: 'Irak', code: 'IRQ', page: 78 },
+  { group: 'I', name: 'Noruega', code: 'NOR', page: 80 },
   // Grupo J
-  { group: 'J', name: 'Argentina', code: 'ARG' },
-  { group: 'J', name: 'Austria', code: 'AUT' },
-  { group: 'J', name: 'Argelia', code: 'ALG' },
-  { group: 'J', name: 'Jordania', code: 'JOR' },
+  { group: 'J', name: 'Argentina', code: 'ARG', page: 82 },
+  { group: 'J', name: 'Argelia', code: 'ALG', page: 84 },
+  { group: 'J', name: 'Austria', code: 'AUT', page: 86 },
+  { group: 'J', name: 'Jordania', code: 'JOR', page: 88 },
   // Grupo K
-  { group: 'K', name: 'Portugal', code: 'POR' },
-  { group: 'K', name: 'Colombia', code: 'COL' },
-  { group: 'K', name: 'Uzbekistán', code: 'UZB' },
-  { group: 'K', name: 'RD Congo', code: 'COD' },
+  { group: 'K', name: 'Portugal', code: 'POR', page: 90 },
+  { group: 'K', name: 'RD Congo', code: 'COD', page: 92 },
+  { group: 'K', name: 'Uzbekistán', code: 'UZB', page: 94 },
+  { group: 'K', name: 'Colombia', code: 'COL', page: 96 },
   // Grupo L
-  { group: 'L', name: 'Inglaterra', code: 'ENG' },
-  { group: 'L', name: 'Croacia', code: 'CRO' },
-  { group: 'L', name: 'Panamá', code: 'PAN' },
-  { group: 'L', name: 'Ghana', code: 'GHA' },
+  { group: 'L', name: 'Inglaterra', code: 'ENG', page: 98 },
+  { group: 'L', name: 'Croacia', code: 'CRO', page: 100 },
+  { group: 'L', name: 'Ghana', code: 'GHA', page: 102 },
+  { group: 'L', name: 'Panamá', code: 'PAN', page: 104 },
 ];
 
 const STICKERS_PER_TEAM = 20;
@@ -200,6 +199,7 @@ function buildAlbum(teams) {
       group: team.group,
       teamName: team.name,
       code: team.code,
+      page: team.page,
       kind: 'team',
       teamIndex: ti,
       stickers: [],

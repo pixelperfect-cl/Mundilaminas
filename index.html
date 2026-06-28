@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#6c5ce7" />
+  <title>Mundial 2026 · Mis Láminas</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Header con progreso -->
+  <header class="app-header">
+    <h1>⚽ Mundial 2026 · Mis Láminas</h1>
+    <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label">
+        <span id="progressText">0 / 980 láminas</span>
+        <span id="progressPct">0%</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input class="search" id="search" type="search" placeholder="Buscar por número o equipo… (ej: 25, Brasil)" />
+    <div class="filters">
+      <button data-filter="all" class="active">Todas</button>
+      <button data-filter="missing">Me faltan</button>
+      <button data-filter="repe">Repetidas</button>
+    </div>
+  </div>
+
+  <!-- Secciones -->
+  <main id="sections"></main>
+
+  <!-- Barra inferior -->
+  <nav class="bottom-bar">
+    <button class="btn-lists" id="btnLists">📋 Mis listas</button>
+    <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
+  </nav>
+
+  <!-- Modal: Listas -->
+  <div class="modal-back" id="modalLists">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2>📋 Mis listas</h2>
+      <div class="tab-row">
+        <button id="tabMissing" class="active">🟥 Me faltan</button>
+        <button id="tabRepes">🔁 Repetidas</button>
+      </div>
+      <div class="list-output" id="listOutput"></div>
+      <div class="modal-actions">
+        <button class="act-whatsapp" id="actWhatsapp">🟢 WhatsApp</button>
+        <button class="act-copy" id="actCopy">📄 Copiar</button>
+        <button class="act-share" id="actShare">📤 Compartir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Menú -->
+  <div class="modal-back" id="modalMenu">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2>⚙️ Menú</h2>
+
+      <div class="stat-row">
+        <div class="stat"><div class="big" id="statHave">0</div><div class="lab">Tengo</div></div>
+        <div class="stat"><div class="big" id="statMissing">0</div><div class="lab">Faltan</div></div>
+        <div class="stat"><div class="big" id="statRepes">0</div><div class="lab">Repes</div></div>
+      </div>
+
+      <h2 style="font-size:1rem">💾 Respaldo</h2>
+      <p class="hint">Tus datos se guardan en este navegador. Descarga un respaldo para no perderlos o pasarlos a otro teléfono.</p>
+      <div class="modal-actions">
+        <button class="act-export" id="actExport">⬇️ Exportar respaldo</button>
+        <label class="act-import" style="display:flex;align-items:center;justify-content:center;cursor:pointer">⬆️ Importar
+          <input type="file" id="importFile" accept="application/json" style="display:none" />
+        </label>
+      </div>
+
+      <h2 style="font-size:1rem;margin-top:18px">✏️ Editar equipos</h2>
+      <p class="hint">Corrige grupo, nombre y código de cada equipo para que calce con tu álbum físico. La numeración se recalcula sola y tus láminas marcadas se conservan.</p>
+      <div id="teamEditor"></div>
+      <div class="modal-actions">
+        <button class="act-share" id="actSaveTeams">✓ Guardar equipos</button>
+        <button class="act-import" id="actResetTeams">↺ Restaurar equipos</button>
+      </div>
+
+      <h2 style="font-size:1rem;margin-top:18px">⚠️ Zona peligrosa</h2>
+      <div class="modal-actions">
+        <button class="act-danger" id="actResetAll">🗑️ Borrar todo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#6c5ce7" />
+  <title>Mundial 2026 · Mis Láminas</title>
+  <style>
+/* Mundial 2026 · Mis Láminas — estilos mobile-first */
+:root {
+  --bg: #0f1226;
+  --bg-soft: #1a1e3a;
+  --card: #20264a;
+  --card-2: #272d57;
+  --text: #eef1ff;
+  --muted: #9aa3c7;
+  --line: #333a6b;
+  --green: #21c17a;
+  --green-d: #14784c;
+  --gold: #f6c945;
+  --red: #ff5d73;
+  --blue: #4d8dff;
+  --accent: #6c5ce7;
+  --radius: 14px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+  padding-bottom: calc(84px + var(--safe-b));
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  position: sticky; top: 0; z-index: 30;
+  background: linear-gradient(135deg, #6c5ce7 0%, #4d8dff 55%, #21c17a 100%);
+  padding: 14px 16px 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+}
+.app-header h1 { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: .2px; }
+.app-header .sub { font-size: .78rem; opacity: .9; margin-top: 2px; }
+
+.progress-wrap { margin-top: 10px; }
+.progress-bar {
+  height: 12px; border-radius: 999px; background: rgba(255,255,255,.22);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #fff, #d8ffe9);
+  border-radius: 999px; transition: width .4s ease;
+}
+.progress-label {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: .78rem; font-weight: 600;
+}
+
+/* ---------- Toolbar ---------- */
+.toolbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg-soft);
+  padding: 10px 12px; border-bottom: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.search {
+  width: 100%; padding: 11px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+  font-size: .95rem; outline: none;
+}
+.search::placeholder { color: var(--muted); }
+.filters { display: flex; gap: 6px; }
+.filters button {
+  flex: 1; padding: 9px 4px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); color: var(--muted); font-weight: 700; font-size: .82rem;
+  cursor: pointer;
+}
+.filters button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ---------- Sections ---------- */
+.section {
+  margin: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--card); overflow: hidden;
+}
+.section-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; cursor: pointer; user-select: none;
+}
+.section-head .chev { transition: transform .2s; font-size: .8rem; color: var(--muted); }
+.section.open .section-head .chev { transform: rotate(90deg); }
+.flag {
+  width: 30px; height: 22px; border-radius: 4px; flex: none;
+  display: grid; place-items: center; font-size: .62rem; font-weight: 800;
+  background: var(--card-2); color: var(--muted); border: 1px solid var(--line);
+}
+.section-title { flex: 1; min-width: 0; }
+.section-title .name { font-weight: 700; font-size: .96rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.section-title .meta { font-size: .72rem; color: var(--muted); }
+.section-mini {
+  font-size: .72rem; font-weight: 800; padding: 4px 8px; border-radius: 999px;
+  background: var(--card-2); color: var(--muted); flex: none;
+}
+.section-mini.done { background: var(--green-d); color: #d6ffe9; }
+
+.sticker-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px; padding: 4px 12px 14px;
+}
+.sticker {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card-2);
+  padding: 6px 4px 4px; text-align: center; position: relative;
+}
+.sticker .num { font-size: .82rem; font-weight: 800; }
+.sticker .lbl {
+  font-size: .58rem; color: var(--muted); height: 2.2em; overflow: hidden;
+  line-height: 1.1; margin: 2px 0 4px;
+}
+.sticker .ctrl { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.sticker .ctrl button {
+  width: 26px; height: 26px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 1rem; font-weight: 800; line-height: 1; color: #fff; background: var(--line);
+}
+.sticker .ctrl .minus { background: #43406b; }
+.sticker .ctrl .plus { background: var(--accent); }
+.sticker .cnt { min-width: 30px; font-weight: 800; font-size: .9rem; }
+
+/* estados */
+.sticker.have { background: var(--green-d); border-color: var(--green); }
+.sticker.have .lbl { color: #cdebd9; }
+.sticker.repe { background: #2a2150; border-color: var(--gold); }
+.badge-repe {
+  position: absolute; top: -7px; right: -7px;
+  background: var(--gold); color: #3a2c00; font-weight: 800; font-size: .64rem;
+  border-radius: 999px; padding: 2px 6px; box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+
+/* ---------- Bottom bar ---------- */
+.bottom-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; gap: 8px; padding: 10px 12px calc(10px + var(--safe-b));
+  background: rgba(15,18,38,.92); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line);
+}
+.bottom-bar button {
+  flex: 1; padding: 13px 6px; border-radius: 12px; border: none; cursor: pointer;
+  font-weight: 800; font-size: .9rem; color: #fff;
+}
+.btn-lists { background: var(--green); }
+.btn-menu { background: var(--card-2); border: 1px solid var(--line) !important; }
+
+/* ---------- Modal ---------- */
+.modal-back {
+  position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.6);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.modal-back.open { display: flex; }
+.modal {
+  width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
+  background: var(--bg-soft); border-radius: 18px 18px 0 0;
+  padding: 16px 16px calc(20px + var(--safe-b));
+  border-top: 2px solid var(--accent);
+}
+.modal h2 { margin: 2px 0 12px; font-size: 1.1rem; }
+.modal .close-x {
+  position: sticky; top: 0; float: right; background: var(--card-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 999px; width: 34px; height: 34px;
+  font-size: 1.1rem; cursor: pointer;
+}
+.tab-row { display: flex; gap: 6px; margin-bottom: 12px; }
+.tab-row button {
+  flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--card); color: var(--muted); font-weight: 700; cursor: pointer; font-size: .85rem;
+}
+.tab-row button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.list-output {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px; font-size: .85rem; white-space: pre-wrap; word-break: break-word;
+  max-height: 46vh; overflow-y: auto; font-family: ui-monospace, monospace;
+}
+.modal-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.modal-actions button {
+  flex: 1; min-width: 120px; padding: 12px; border-radius: 10px; border: none; cursor: pointer;
+  font-weight: 800; color: #fff; font-size: .88rem;
+}
+.act-copy { background: var(--blue); }
+.act-share { background: var(--green); }
+.act-whatsapp { background: #25d366; }
+.act-export { background: var(--accent); }
+.act-import { background: var(--card-2); border: 1px solid var(--line) !important; }
+.act-danger { background: #7a2030; }
+
+/* edit teams */
+.team-edit-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.team-edit-row .grp {
+  width: 46px; padding: 9px 6px; text-align: center; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text); font-weight: 700;
+}
+.team-edit-row .nm {
+  flex: 1; padding: 9px 10px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+}
+.hint { font-size: .78rem; color: var(--muted); margin: 4px 0 12px; }
+.stat-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.stat {
+  flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px; text-align: center;
+}
+.stat .big { font-size: 1.4rem; font-weight: 800; }
+.stat .lab { font-size: .7rem; color: var(--muted); }
+.toast {
+  position: fixed; bottom: calc(96px + var(--safe-b)); left: 50%; transform: translateX(-50%);
+  background: var(--card-2); color: var(--text); border: 1px solid var(--accent);
+  padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: .85rem;
+  z-index: 60; opacity: 0; transition: opacity .25s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+.empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+
+</style>
+</head>
+<body>
+  <!-- Header con progreso -->
+  <header class="app-header">
+    <h1>⚽ Mundial 2026 · Mis Láminas</h1>
+    <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label">
+        <span id="progressText">0 / 980 láminas</span>
+        <span id="progressPct">0%</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input class="search" id="search" type="search" placeholder="Buscar por número o equipo… (ej: 25, Brasil)" />
+    <div class="filters">
+      <button data-filter="all" class="active">Todas</button>
+      <button data-filter="missing">Me faltan</button>
+      <button data-filter="repe">Repetidas</button>
+    </div>
+  </div>
+
+  <!-- Secciones -->
+  <main id="sections"></main>
+
+  <!-- Barra inferior -->
+  <nav class="bottom-bar">
+    <button class="btn-lists" id="btnLists">📋 Mis listas</button>
+    <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
+  </nav>
+
+  <!-- Modal: Listas -->
+  <div class="modal-back" id="modalLists">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2>📋 Mis listas</h2>
+      <div class="tab-row">
+        <button id="tabMissing" class="active">🟥 Me faltan</button>
+        <button id="tabRepes">🔁 Repetidas</button>
+      </div>
+      <div class="list-output" id="listOutput"></div>
+      <div class="modal-actions">
+        <button class="act-whatsapp" id="actWhatsapp">🟢 WhatsApp</button>
+        <button class="act-copy" id="actCopy">📄 Copiar</button>
+        <button class="act-share" id="actShare">📤 Compartir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Menú -->
+  <div class="modal-back" id="modalMenu">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2>⚙️ Menú</h2>
+
+      <div class="stat-row">
+        <div class="stat"><div class="big" id="statHave">0</div><div class="lab">Tengo</div></div>
+        <div class="stat"><div class="big" id="statMissing">0</div><div class="lab">Faltan</div></div>
+        <div class="stat"><div class="big" id="statRepes">0</div><div class="lab">Repes</div></div>
+      </div>
+
+      <h2 style="font-size:1rem">💾 Respaldo</h2>
+      <p class="hint">Tus datos se guardan en este navegador. Descarga un respaldo para no perderlos o pasarlos a otro teléfono.</p>
+      <div class="modal-actions">
+        <button class="act-export" id="actExport">⬇️ Exportar respaldo</button>
+        <label class="act-import" style="display:flex;align-items:center;justify-content:center;cursor:pointer">⬆️ Importar
+          <input type="file" id="importFile" accept="application/json" style="display:none" />
+        </label>
+      </div>
+
+      <h2 style="font-size:1rem;margin-top:18px">✏️ Editar equipos</h2>
+      <p class="hint">Corrige grupo, nombre y código de cada equipo para que calce con tu álbum físico. La numeración se recalcula sola y tus láminas marcadas se conservan.</p>
+      <div id="teamEditor"></div>
+      <div class="modal-actions">
+        <button class="act-share" id="actSaveTeams">✓ Guardar equipos</button>
+        <button class="act-import" id="actResetTeams">↺ Restaurar equipos</button>
+      </div>
+
+      <h2 style="font-size:1rem;margin-top:18px">⚠️ Zona peligrosa</h2>
+      <div class="modal-actions">
+        <button class="act-danger" id="actResetAll">🗑️ Borrar todo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+/*
+ * Álbum Panini FIFA World Cup 2026 — estructura de la colección.
+ *
+ * Total: 980 láminas
+ *   - 9  láminas de Introducción (foil/brillantes)
+ *   - 11 láminas FIFA Museum (leyendas / campeones del pasado)
+ *   - 48 equipos × 20 láminas = 960
+ *
+ * IMPORTANTE: el orden de grupos (A-L) y los nombres de equipos son un
+ * "mejor esfuerzo" basado en el sorteo del Mundial 2026. Puedes editar
+ * cualquier nombre desde la app (botón ✏️) para que calce exactamente con
+ * tu álbum físico. La numeración se recalcula sola.
+ *
+ * Numeración usada:
+ *   Intro:        1 – 9
+ *   FIFA Museum: 10 – 20
+ *   Equipos:     21 – 980  (cada equipo ocupa 20 números consecutivos)
+ *
+ * Dentro de cada equipo (20 láminas):
+ *   slot 1  -> Escudo (brillante)
+ *   slot 2  -> Foto del plantel
+ *   slot 3..20 -> Jugadores (18)
+ */
+
+// 9 láminas de introducción (brillantes)
+const INTRO_STICKERS = [
+  'Logo Panini',
+  'Emblema oficial',
+  'Mascota La\'eeb / Trío',
+  'Mascotas',
+  'Eslogan oficial',
+  'Balón oficial',
+  'Sede: Estados Unidos',
+  'Sede: México',
+  'Sede: Canadá',
+];
+
+// 11 láminas FIFA Museum (campeones históricos)
+const MUSEUM_STICKERS = [
+  'FIFA Museum 1',
+  'FIFA Museum 2',
+  'FIFA Museum 3',
+  'FIFA Museum 4',
+  'FIFA Museum 5',
+  'FIFA Museum 6',
+  'FIFA Museum 7',
+  'FIFA Museum 8',
+  'FIFA Museum 9',
+  'FIFA Museum 10',
+  'FIFA Museum 11',
+];
+
+// 48 equipos agrupados por grupo (A-L). EDITABLE desde la app.
+// Cada objeto: { group: 'A', name: 'México', code: 'MEX' }
+const TEAMS = [
+  // Grupo A
+  { group: 'A', name: 'México', code: 'MEX' },
+  { group: 'A', name: 'Sudáfrica', code: 'RSA' },
+  { group: 'A', name: 'Corea del Sur', code: 'KOR' },
+  { group: 'A', name: 'Rep. Checa', code: 'CZE' },
+  // Grupo B
+  { group: 'B', name: 'Canadá', code: 'CAN' },
+  { group: 'B', name: 'Suiza', code: 'SUI' },
+  { group: 'B', name: 'Catar', code: 'QAT' },
+  { group: 'B', name: 'Bosnia', code: 'BIH' },
+  // Grupo C
+  { group: 'C', name: 'Brasil', code: 'BRA' },
+  { group: 'C', name: 'Marruecos', code: 'MAR' },
+  { group: 'C', name: 'Escocia', code: 'SCO' },
+  { group: 'C', name: 'Haití', code: 'HAI' },
+  // Grupo D
+  { group: 'D', name: 'Estados Unidos', code: 'USA' },
+  { group: 'D', name: 'Paraguay', code: 'PAR' },
+  { group: 'D', name: 'Australia', code: 'AUS' },
+  { group: 'D', name: 'Turquía', code: 'TUR' },
+  // Grupo E
+  { group: 'E', name: 'Argentina', code: 'ARG' },
+  { group: 'E', name: 'Argelia', code: 'ALG' },
+  { group: 'E', name: 'Austria', code: 'AUT' },
+  { group: 'E', name: 'Jordania', code: 'JOR' },
+  // Grupo F
+  { group: 'F', name: 'Países Bajos', code: 'NED' },
+  { group: 'F', name: 'Japón', code: 'JPN' },
+  { group: 'F', name: 'Túnez', code: 'TUN' },
+  { group: 'F', name: 'Nueva Zelanda', code: 'NZL' },
+  // Grupo G
+  { group: 'G', name: 'Bélgica', code: 'BEL' },
+  { group: 'G', name: 'Egipto', code: 'EGY' },
+  { group: 'G', name: 'Irán', code: 'IRN' },
+  { group: 'G', name: 'Costa Rica', code: 'CRC' },
+  // Grupo H
+  { group: 'H', name: 'España', code: 'ESP' },
+  { group: 'H', name: 'Uruguay', code: 'URU' },
+  { group: 'H', name: 'Arabia Saudita', code: 'KSA' },
+  { group: 'H', name: 'Cabo Verde', code: 'CPV' },
+  // Grupo I
+  { group: 'I', name: 'Francia', code: 'FRA' },
+  { group: 'I', name: 'Senegal', code: 'SEN' },
+  { group: 'I', name: 'Noruega', code: 'NOR' },
+  { group: 'I', name: 'Irak', code: 'IRQ' },
+  // Grupo J
+  { group: 'J', name: 'Alemania', code: 'GER' },
+  { group: 'J', name: 'Colombia', code: 'COL' },
+  { group: 'J', name: 'Costa de Marfil', code: 'CIV' },
+  { group: 'J', name: 'Panamá', code: 'PAN' },
+  // Grupo K
+  { group: 'K', name: 'Portugal', code: 'POR' },
+  { group: 'K', name: 'RD Congo', code: 'COD' },
+  { group: 'K', name: 'Uzbekistán', code: 'UZB' },
+  { group: 'K', name: 'Ecuador', code: 'ECU' },
+  // Grupo L
+  { group: 'L', name: 'Inglaterra', code: 'ENG' },
+  { group: 'L', name: 'Croacia', code: 'CRO' },
+  { group: 'L', name: 'Ghana', code: 'GHA' },
+  { group: 'L', name: 'Nigeria', code: 'NGA' },
+];
+
+const STICKERS_PER_TEAM = 20;
+
+// Mapa código FIFA (3 letras) -> código ISO 3166-1 alpha-2 (2 letras).
+// Se usa para construir el emoji de bandera de cada país.
+const FIFA_TO_ISO2 = {
+  MEX: 'MX', RSA: 'ZA', KOR: 'KR', CZE: 'CZ',
+  CAN: 'CA', SUI: 'CH', QAT: 'QA', BIH: 'BA',
+  BRA: 'BR', MAR: 'MA', HAI: 'HT',
+  USA: 'US', PAR: 'PY', AUS: 'AU', TUR: 'TR',
+  ARG: 'AR', ALG: 'DZ', AUT: 'AT', JOR: 'JO',
+  NED: 'NL', JPN: 'JP', TUN: 'TN', NZL: 'NZ',
+  BEL: 'BE', EGY: 'EG', IRN: 'IR', CRC: 'CR',
+  ESP: 'ES', URU: 'UY', KSA: 'SA', CPV: 'CV',
+  FRA: 'FR', SEN: 'SN', NOR: 'NO', IRQ: 'IQ',
+  GER: 'DE', COL: 'CO', CIV: 'CI', PAN: 'PA',
+  POR: 'PT', COD: 'CD', UZB: 'UZ', ECU: 'EC',
+  CRO: 'HR', GHA: 'GH', NGA: 'NG',
+};
+
+// Banderas de subdivisiones del Reino Unido (no tienen código ISO alpha-2).
+const SPECIAL_FLAGS = {
+  SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', // 🏴 Escocia
+  ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', // 🏴 Inglaterra
+};
+
+/**
+ * Devuelve el emoji de bandera para un código de equipo (FIFA o ISO2).
+ * Si no se reconoce el código, devuelve cadena vacía.
+ */
+function flagFor(code) {
+  if (!code) return '';
+  const c = String(code).toUpperCase();
+  if (SPECIAL_FLAGS[c]) return SPECIAL_FLAGS[c];
+  const iso2 = FIFA_TO_ISO2[c] || (c.length === 2 ? c : '');
+  if (iso2.length !== 2 || !/^[A-Z]{2}$/.test(iso2)) return '';
+  const A = 0x1F1E6; // 🇦 (regional indicator A)
+  return String.fromCodePoint(A + (iso2.charCodeAt(0) - 65)) +
+         String.fromCodePoint(A + (iso2.charCodeAt(1) - 65));
+}
+
+/**
+ * Construye la lista completa de secciones y láminas a partir de la
+ * configuración (que puede venir editada desde localStorage).
+ * Devuelve { sections: [...], stickers: [...] } con numeración recalculada.
+ *
+ * Cada sticker: { num, key, label, sectionId, sectionTitle }
+ *   - num: número global 1..980
+ *   - key: identificador estable para guardar el estado (no cambia al renombrar)
+ */
+function buildAlbum(teams) {
+  const sections = [];
+  const stickers = [];
+  let num = 1;
+
+  // Sección Introducción
+  const intro = { id: 'intro', title: 'Introducción', kind: 'special', stickers: [] };
+  INTRO_STICKERS.forEach((label, i) => {
+    const s = { num: num++, disp: i + 1, key: `intro-${i}`, label, sectionId: 'intro', sectionTitle: 'Introducción' };
+    intro.stickers.push(s);
+    stickers.push(s);
+  });
+  sections.push(intro);
+
+  // Sección FIFA Museum
+  const museum = { id: 'museum', title: 'FIFA Museum (Leyendas)', kind: 'special', stickers: [] };
+  MUSEUM_STICKERS.forEach((label, i) => {
+    const s = { num: num++, disp: i + 1, key: `museum-${i}`, label, sectionId: 'museum', sectionTitle: 'FIFA Museum' };
+    museum.stickers.push(s);
+    stickers.push(s);
+  });
+  sections.push(museum);
+
+  // Secciones por equipo
+  teams.forEach((team, ti) => {
+    const sectionId = `team-${ti}`;
+    const title = `Grupo ${team.group} · ${team.name}`;
+    const section = {
+      id: sectionId,
+      title,
+      group: team.group,
+      teamName: team.name,
+      code: team.code,
+      kind: 'team',
+      teamIndex: ti,
+      stickers: [],
+    };
+    for (let slot = 1; slot <= STICKERS_PER_TEAM; slot++) {
+      // Numeración POR EQUIPO: cada equipo va del 1 al 20.
+      // (escudo = 1, foto del plantel = 13, el resto jugadores)
+      let label;
+      if (slot === 1) label = 'Escudo ✨';
+      else if (slot === 13) label = 'Foto plantel';
+      else label = 'Jugador';
+      const s = {
+        num: num++,           // número global 1..980 (para orden/respaldos)
+        disp: slot,           // número que se MUESTRA (1..20 por equipo)
+        key: `${sectionId}-${slot}`,
+        label,
+        sectionId,
+        sectionTitle: title,
+      };
+      section.stickers.push(s);
+      stickers.push(s);
+    }
+    sections.push(section);
+  });
+
+  return { sections, stickers };
+}
+
+window.ALBUM_CONFIG = {
+  INTRO_STICKERS,
+  MUSEUM_STICKERS,
+  DEFAULT_TEAMS: TEAMS,
+  STICKERS_PER_TEAM,
+  buildAlbum,
+  flagFor,
+  TOTAL: INTRO_STICKERS.length + MUSEUM_STICKERS.length + TEAMS.length * STICKERS_PER_TEAM,
+};
+
+</script>
+  <script>
+/* Mundial 2026 · Mis Láminas — lógica de la app (vanilla JS, localStorage) */
+(function () {
+  'use strict';
+
+  const CFG = window.ALBUM_CONFIG;
+  const LS_COUNTS = 'wc26-counts';
+  const LS_TEAMS = 'wc26-teams';
+  const LS_OPEN = 'wc26-open-sections';
+
+  // ---------- Estado ----------
+  let counts = loadJSON(LS_COUNTS, {});            // { stickerKey: copiasQueTengo }
+  let teams = loadJSON(LS_TEAMS, null) || clone(CFG.DEFAULT_TEAMS);
+  let openSections = new Set(loadJSON(LS_OPEN, []));
+  let filter = 'all';      // all | missing | repe
+  let search = '';
+  let album = CFG.buildAlbum(teams);
+
+  // ---------- Helpers de almacenamiento ----------
+  function loadJSON(k, fallback) {
+    try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  }
+  function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function getCount(key) { return counts[key] || 0; }
+  function setCount(key, n) {
+    n = Math.max(0, n | 0);
+    if (n === 0) delete counts[key]; else counts[key] = n;
+    saveJSON(LS_COUNTS, counts);
+  }
+
+  // ---------- Cálculos ----------
+  function stats() {
+    let have = 0, missing = 0, repesTotal = 0;
+    album.stickers.forEach((s) => {
+      const c = getCount(s.key);
+      if (c >= 1) have++; else missing++;
+      if (c >= 2) repesTotal += c - 1;
+    });
+    return { total: album.stickers.length, have, missing, repesTotal };
+  }
+
+  function sectionStats(section) {
+    let have = 0;
+    section.stickers.forEach((s) => { if (getCount(s.key) >= 1) have++; });
+    return { have, total: section.stickers.length };
+  }
+
+  // ---------- Render ----------
+  const el = (id) => document.getElementById(id);
+
+  function render() {
+    renderProgress();
+    renderSections();
+  }
+
+  function renderProgress() {
+    const st = stats();
+    const pct = st.total ? Math.round((st.have / st.total) * 100) : 0;
+    el('progressFill').style.width = pct + '%';
+    el('progressText').textContent = `${st.have} / ${st.total} láminas`;
+    el('progressPct').textContent = `${pct}% · faltan ${st.missing} · repes ${st.repesTotal}`;
+  }
+
+  function matchesFilter(s) {
+    const c = getCount(s.key);
+    if (filter === 'missing' && c >= 1) return false;
+    if (filter === 'repe' && c < 2) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!String(s.disp).includes(q) && !s.label.toLowerCase().includes(q) &&
+          !s.sectionTitle.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }
+
+  function renderSections() {
+    const root = el('sections');
+    root.innerHTML = '';
+    let anyVisible = false;
+
+    album.sections.forEach((section) => {
+      const visible = section.stickers.filter(matchesFilter);
+      if (visible.length === 0) return;
+      anyVisible = true;
+
+      const ss = sectionStats(section);
+      const isOpen = openSections.has(section.id) || !!search || filter !== 'all';
+
+      const secEl = document.createElement('div');
+      secEl.className = 'section' + (isOpen ? ' open' : '');
+
+      const flag = section.kind === 'team'
+        ? `<div class="flag">${section.code || ''}</div>`
+        : `<div class="flag">★</div>`;
+
+      const head = document.createElement('div');
+      head.className = 'section-head';
+      head.innerHTML = `
+        <span class="chev">▶</span>
+        ${flag}
+        <div class="section-title">
+          <div class="name">${escapeHtml(section.kind === 'team' ? section.teamName : section.title)}</div>
+          <div class="meta">${section.kind === 'team' ? 'Grupo ' + section.group : section.title}</div>
+        </div>
+        <div class="section-mini ${ss.have === ss.total ? 'done' : ''}">${ss.have}/${ss.total}</div>
+      `;
+      head.addEventListener('click', () => {
+        if (openSections.has(section.id)) openSections.delete(section.id);
+        else openSections.add(section.id);
+        saveJSON(LS_OPEN, [...openSections]);
+        renderSections();
+      });
+      secEl.appendChild(head);
+
+      const miniEl = head.querySelector('.section-mini');
+      if (isOpen) {
+        const grid = document.createElement('div');
+        grid.className = 'sticker-grid';
+        visible.forEach((s) => grid.appendChild(stickerEl(s, section, miniEl)));
+        secEl.appendChild(grid);
+      }
+      root.appendChild(secEl);
+    });
+
+    if (!anyVisible) {
+      root.innerHTML = `<div class="empty">No hay láminas que coincidan con el filtro.</div>`;
+    }
+  }
+
+  function stickerEl(s, section, miniEl) {
+    const c = getCount(s.key);
+    const div = document.createElement('div');
+    div.className = 'sticker' + (c >= 2 ? ' repe' : c === 1 ? ' have' : '');
+    const repes = c >= 2 ? c - 1 : 0;
+    div.innerHTML = `
+      ${repes > 0 ? `<span class="badge-repe">+${repes}</span>` : ''}
+      <div class="num">#${s.disp}</div>
+      <div class="lbl">${escapeHtml(s.label)}</div>
+      <div class="ctrl">
+        <button class="minus" aria-label="quitar">−</button>
+        <span class="cnt">${c === 0 ? '·' : c}</span>
+        <button class="plus" aria-label="sumar">+</button>
+      </div>
+    `;
+    const cntEl = div.querySelector('.cnt');
+    const apply = (n) => {
+      setCount(s.key, n);
+      const nc = getCount(s.key);
+      cntEl.textContent = nc === 0 ? '·' : nc;
+      div.className = 'sticker' + (nc >= 2 ? ' repe' : nc === 1 ? ' have' : '');
+      const old = div.querySelector('.badge-repe'); if (old) old.remove();
+      if (nc >= 2) {
+        const b = document.createElement('span'); b.className = 'badge-repe';
+        b.textContent = '+' + (nc - 1); div.prepend(b);
+      }
+      renderProgress();
+      // actualizar contador de la sección en vivo
+      if (miniEl && section) {
+        const ss = sectionStats(section);
+        miniEl.textContent = `${ss.have}/${ss.total}`;
+        miniEl.classList.toggle('done', ss.have === ss.total);
+      }
+      // si hay filtro activo y deja de calzar, re-render para ocultarla
+      if (filter !== 'all' && !matchesFilter(s)) renderSections();
+    };
+    // siempre re-leemos getCount(s.key) por si el cierre quedó desactualizado
+    div.querySelector('.plus').addEventListener('click', (e) => { e.stopPropagation(); apply(getCount(s.key) + 1); });
+    div.querySelector('.minus').addEventListener('click', (e) => { e.stopPropagation(); apply(getCount(s.key) - 1); });
+    return div;
+  }
+
+  // ---------- Listas (faltan / repes) ----------
+  // Título de una sección para las listas, con bandera del país si es equipo.
+  function sectionLabel(section) {
+    if (section.kind !== 'team') return section.title;
+    const flag = CFG.flagFor ? CFG.flagFor(section.code) : '';
+    return `${flag ? flag + ' ' : ''}Grupo ${section.group} · ${section.teamName}`;
+  }
+
+  function buildMissingText() {
+    const lines = ['🟥 ME FALTAN — Mundial 2026', ''];
+    let total = 0;
+    album.sections.forEach((section) => {
+      const miss = section.stickers.filter((s) => getCount(s.key) === 0);
+      if (!miss.length) return;
+      total += miss.length;
+      const title = sectionLabel(section);
+      lines.push(`${title}: ` + miss.map((s) => '#' + s.disp).join(', '));
+    });
+    lines.splice(1, 0, `Total: ${total} láminas`);
+    if (total === 0) return '🎉 ¡No te falta ninguna! Álbum completo.';
+    return lines.join('\n');
+  }
+
+  function buildRepesText() {
+    const lines = ['🔁 REPETIDAS (para cambiar) — Mundial 2026', ''];
+    let total = 0;
+    album.sections.forEach((section) => {
+      const reps = section.stickers
+        .map((s) => ({ s, r: Math.max(0, getCount(s.key) - 1) }))
+        .filter((x) => x.r > 0);
+      if (!reps.length) return;
+      const title = sectionLabel(section);
+      reps.forEach((x) => total += x.r);
+      lines.push(`${title}: ` + reps.map((x) => `#${x.s.disp}${x.r > 1 ? ' (x' + x.r + ')' : ''}`).join(', '));
+    });
+    lines.splice(1, 0, `Total repetidas: ${total}`);
+    if (total === 0) return 'No tienes láminas repetidas todavía.';
+    return lines.join('\n');
+  }
+
+  // ---------- Modales ----------
+  let listsTab = 'missing';
+  function openLists() {
+    listsTab = 'missing';
+    el('modalLists').classList.add('open');
+    refreshListsModal();
+  }
+  function refreshListsModal() {
+    el('tabMissing').classList.toggle('active', listsTab === 'missing');
+    el('tabRepes').classList.toggle('active', listsTab === 'repes');
+    const text = listsTab === 'missing' ? buildMissingText() : buildRepesText();
+    el('listOutput').textContent = text;
+    el('listOutput').dataset.text = text;
+  }
+
+  function openMenu() {
+    const st = stats();
+    el('statHave').textContent = st.have;
+    el('statMissing').textContent = st.missing;
+    el('statRepes').textContent = st.repesTotal;
+    renderTeamEditor();
+    el('modalMenu').classList.add('open');
+  }
+
+  function renderTeamEditor() {
+    const wrap = el('teamEditor');
+    wrap.innerHTML = '';
+    teams.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'team-edit-row';
+      row.innerHTML = `
+        <input class="grp" value="${escapeHtml(t.group)}" maxlength="2" data-i="${i}" data-f="group" />
+        <input class="nm" value="${escapeHtml(t.name)}" data-i="${i}" data-f="name" />
+        <input class="grp" value="${escapeHtml(t.code || '')}" maxlength="3" data-i="${i}" data-f="code" />
+      `;
+      wrap.appendChild(row);
+    });
+    wrap.querySelectorAll('input').forEach((inp) => {
+      inp.addEventListener('change', (e) => {
+        const i = +e.target.dataset.i, f = e.target.dataset.f;
+        teams[i][f] = e.target.value;
+      });
+    });
+  }
+
+  function saveTeams() {
+    saveJSON(LS_TEAMS, teams);
+    album = CFG.buildAlbum(teams);   // re-numera, mantiene counts por key estable
+    render();
+    closeModals();
+    toast('Equipos guardados ✓');
+  }
+
+  function resetTeams() {
+    if (!confirm('¿Restaurar los 48 equipos por defecto? (No borra tus láminas marcadas)')) return;
+    teams = clone(CFG.DEFAULT_TEAMS);
+    saveJSON(LS_TEAMS, teams);
+    album = CFG.buildAlbum(teams);
+    renderTeamEditor();
+    render();
+    toast('Equipos restaurados');
+  }
+
+  // ---------- Export / Import ----------
+  function exportData() {
+    const payload = { v: 1, app: 'wc26-album', exportedAt: new Date().toISOString(), counts, teams };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'mundial2026-laminas-backup.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('Respaldo descargado ✓');
+  }
+
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data.counts) counts = data.counts;
+        if (Array.isArray(data.teams) && data.teams.length) teams = data.teams;
+        saveJSON(LS_COUNTS, counts);
+        saveJSON(LS_TEAMS, teams);
+        album = CFG.buildAlbum(teams);
+        render();
+        closeModals();
+        toast('Respaldo importado ✓');
+      } catch {
+        alert('No se pudo leer el archivo. ¿Es un respaldo válido?');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function resetAll() {
+    if (!confirm('¿Borrar TODO (láminas marcadas y equipos)? Esto no se puede deshacer.')) return;
+    counts = {}; teams = clone(CFG.DEFAULT_TEAMS); openSections = new Set();
+    localStorage.removeItem(LS_COUNTS);
+    localStorage.removeItem(LS_TEAMS);
+    localStorage.removeItem(LS_OPEN);
+    album = CFG.buildAlbum(teams);
+    render(); closeModals(); toast('Todo reiniciado');
+  }
+
+  // ---------- Compartir / copiar ----------
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => toast('Copiado ✓'), () => fallbackCopy(text));
+    } else fallbackCopy(text);
+  }
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('Copiado ✓'); } catch { toast('No se pudo copiar'); }
+    ta.remove();
+  }
+  function shareText(text) {
+    if (navigator.share) navigator.share({ title: 'Mundial 2026 · Láminas', text }).catch(() => {});
+    else { copyText(text); toast('Copiado (no hay share nativo)'); }
+  }
+  // Abre WhatsApp con el texto ya cargado para elegir el contacto/grupo.
+  function shareWhatsApp(text) {
+    if (!text) return;
+    const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+    window.open(url, '_blank');
+  }
+
+  // ---------- Utilidades UI ----------
+  function closeModals() {
+    document.querySelectorAll('.modal-back').forEach((m) => m.classList.remove('open'));
+  }
+  let toastTimer;
+  function toast(msg) {
+    const t = el('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  }
+
+  // ---------- Eventos ----------
+  function bind() {
+    el('search').addEventListener('input', (e) => { search = e.target.value.trim(); renderSections(); });
+    document.querySelectorAll('.filters button').forEach((b) => {
+      b.addEventListener('click', () => {
+        filter = b.dataset.filter;
+        document.querySelectorAll('.filters button').forEach((x) => x.classList.toggle('active', x === b));
+        renderSections();
+      });
+    });
+    el('btnLists').addEventListener('click', openLists);
+    el('btnMenu').addEventListener('click', openMenu);
+    document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
+    document.querySelectorAll('.modal-back').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModals(); }));
+
+    el('tabMissing').addEventListener('click', () => { listsTab = 'missing'; refreshListsModal(); });
+    el('tabRepes').addEventListener('click', () => { listsTab = 'repes'; refreshListsModal(); });
+    el('actWhatsapp').addEventListener('click', () => shareWhatsApp(el('listOutput').dataset.text || ''));
+    el('actCopy').addEventListener('click', () => copyText(el('listOutput').dataset.text || ''));
+    el('actShare').addEventListener('click', () => shareText(el('listOutput').dataset.text || ''));
+
+    el('actExport').addEventListener('click', exportData);
+    el('importFile').addEventListener('change', (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; });
+    el('actSaveTeams').addEventListener('click', saveTeams);
+    el('actResetTeams').addEventListener('click', resetTeams);
+    el('actResetAll').addEventListener('click', resetAll);
+  }
+
+  // ---------- Init ----------
+  bind();
+  render();
+})();
+
+</script>
+</body>
+</html>

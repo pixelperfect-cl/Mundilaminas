@@ -361,12 +361,6 @@ body {
         <button class="act-share" id="btnLogin">Iniciar sesión con Google</button>
         <button class="act-import" id="btnLogout" style="display:none">Cerrar sesión</button>
       </div>
-      <details style="margin-top:8px">
-        <summary class="hint">Configuración avanzada (URL de la API · Client ID de Google)</summary>
-        <input class="search" id="cfgApi" placeholder="https://tuapp.cloudwaysapps.com" style="margin-top:8px" />
-        <input class="search" id="cfgGid" placeholder="Client ID de Google" style="margin-top:8px" />
-        <div class="modal-actions"><button class="act-export" id="saveCfgBtn">Guardar configuración</button></div>
-      </details>
 
       <h2 style="font-size:1rem;margin-top:18px">💾 Respaldo</h2>
       <p class="hint">Tus datos se guardan en este navegador. Descarga un respaldo para no perderlos o pasarlos a otro teléfono.</p>
@@ -1422,9 +1416,6 @@ window.ALBUM_CONFIG = {
       else if (!cloudConfigured()) status.textContent = 'Nube sin configurar (opcional). Funciona todo en modo local.';
       else status.textContent = 'No has iniciado sesión.';
     }
-    const setVal = (id, v) => { const e = el(id); if (e && document.activeElement !== e) e.value = v; };
-    setVal('cfgApi', localStorage.getItem(LS_API) || DEFAULT_API_BASE || '');
-    setVal('cfgGid', localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || '');
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
     show('btnNotifs', loggedIn());
@@ -1434,14 +1425,6 @@ window.ALBUM_CONFIG = {
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
   }
-  function saveCloudCfg() {
-    const a = (el('cfgApi').value || '').trim().replace(/\/+$/, ''), g = (el('cfgGid').value || '').trim();
-    if (a) localStorage.setItem(LS_API, a); else localStorage.removeItem(LS_API);
-    if (g) localStorage.setItem(LS_GID, g); else localStorage.removeItem(LS_GID);
-    googleReady = false; initGoogle();
-    toast('Configuración guardada'); updateCloudUI();
-  }
-
   // ---------- Eventos ----------
   function bind() {
     el('search').addEventListener('input', (e) => { search = e.target.value.trim(); renderSections(); });
@@ -1477,7 +1460,6 @@ window.ALBUM_CONFIG = {
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
     on('addFriendBtn', 'click', addFriend);
-    on('saveCfgBtn', 'click', saveCloudCfg);
     on('copyCode', 'click', () => copyText(me ? '@' + me.handle : ''));
     on('matchWhatsapp', 'click', () => shareWhatsApp(el('matchOutput').dataset.text || ''));
     on('matchCopy', 'click', () => copyText(el('matchOutput').dataset.text || ''));

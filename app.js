@@ -720,9 +720,6 @@
       else if (!cloudConfigured()) status.textContent = 'Nube sin configurar (opcional). Funciona todo en modo local.';
       else status.textContent = 'No has iniciado sesión.';
     }
-    const setVal = (id, v) => { const e = el(id); if (e && document.activeElement !== e) e.value = v; };
-    setVal('cfgApi', localStorage.getItem(LS_API) || DEFAULT_API_BASE || '');
-    setVal('cfgGid', localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || '');
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
     show('btnNotifs', loggedIn());
@@ -732,14 +729,6 @@
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
   }
-  function saveCloudCfg() {
-    const a = (el('cfgApi').value || '').trim().replace(/\/+$/, ''), g = (el('cfgGid').value || '').trim();
-    if (a) localStorage.setItem(LS_API, a); else localStorage.removeItem(LS_API);
-    if (g) localStorage.setItem(LS_GID, g); else localStorage.removeItem(LS_GID);
-    googleReady = false; initGoogle();
-    toast('Configuración guardada'); updateCloudUI();
-  }
-
   // ---------- Eventos ----------
   function bind() {
     el('search').addEventListener('input', (e) => { search = e.target.value.trim(); renderSections(); });
@@ -775,7 +764,6 @@
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
     on('addFriendBtn', 'click', addFriend);
-    on('saveCfgBtn', 'click', saveCloudCfg);
     on('copyCode', 'click', () => copyText(me ? '@' + me.handle : ''));
     on('matchWhatsapp', 'click', () => shareWhatsApp(el('matchOutput').dataset.text || ''));
     on('matchCopy', 'click', () => copyText(el('matchOutput').dataset.text || ''));

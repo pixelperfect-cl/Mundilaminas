@@ -33,9 +33,26 @@ CREATE TABLE IF NOT EXISTS friendships (
   user_id     BIGINT UNSIGNED NOT NULL,
   friend_id   BIGINT UNSIGNED NOT NULL,
   status      ENUM('pending','accepted','blocked') NOT NULL DEFAULT 'pending',
+  watch       TINYINT(1) NOT NULL DEFAULT 1,          -- ¿vigilo a este amigo para avisos de match?
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, friend_id),
   KEY idx_friend (friend_id),
   CONSTRAINT fk_fr_user   FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_fr_friend FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Notificaciones de match: una "viva" por (usuario, amigo). Se rellena con
+-- refresh_notifications() al cruzar repes/faltantes de amigos vigilados.
+CREATE TABLE IF NOT EXISTS notifications (
+  user_id     BIGINT UNSIGNED NOT NULL,               -- destinatario del aviso
+  friend_id   BIGINT UNSIGNED NOT NULL,               -- amigo del match
+  they_give   INT UNSIGNED NOT NULL DEFAULT 0,         -- cuántas me puede pasar (me faltan)
+  i_give      INT UNSIGNED NOT NULL DEFAULT 0,         -- cuántas le paso yo
+  sig         CHAR(32) NOT NULL DEFAULT '',            -- firma del set "they_give_me" (evita repetir)
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  read_at     DATETIME DEFAULT NULL,                   -- NULL = no leída
+  PRIMARY KEY (user_id, friend_id),
+  KEY idx_user_unread (user_id, read_at),
+  CONSTRAINT fk_no_user   FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_no_friend FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

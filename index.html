@@ -10,6 +10,7 @@
 <body>
   <!-- Header con progreso -->
   <header class="app-header">
+    <button class="bell-btn" id="btnNotifs" aria-label="Notificaciones" style="display:none">🔔<span class="bell-badge" id="notifBadge" hidden>0</span></button>
     <h1>⚽ Mundial 2026 · Mis Láminas</h1>
     <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
     <div class="progress-wrap">
@@ -136,6 +137,16 @@
         <button class="act-whatsapp" id="matchWhatsapp">🟢 WhatsApp</button>
         <button class="act-copy" id="matchCopy">📄 Copiar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Notificaciones -->
+  <div class="modal-back" id="modalNotifs">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2>🔔 Notificaciones</h2>
+      <p class="hint">Te avisamos cuando un amigo que vigilas (🔔 en 👥 Amigos) tiene láminas que te faltan. El cruce es de tus repetidas y faltantes con las de él.</p>
+      <div id="notifsBody"></div>
     </div>
   </div>
 

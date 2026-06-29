@@ -164,7 +164,7 @@ if ($method === 'GET' && $path === 'friends') {
   $pdo = db();
 
   $f = $pdo->prepare(
-    "SELECT u.id, u.handle, u.name, u.avatar_url
+    "SELECT u.id, u.handle, u.name, u.avatar_url, fr.watch
        FROM friendships fr JOIN users u ON u.id = fr.friend_id
       WHERE fr.user_id = ? AND fr.status = 'accepted'
       ORDER BY u.name, u.handle"
@@ -177,6 +177,7 @@ if ($method === 'GET' && $path === 'friends') {
       'user'         => public_user($row),
       'they_give_me' => count($m['they_give_me']),
       'i_give_them'  => count($m['i_give_them']),
+      'watch'        => (bool)$row['watch'],
     ];
   }
 
@@ -214,6 +215,58 @@ if ($method === 'GET' && $path === 'friends/matches') {
 
   $m = compute_matches($pdo, $me['uid'], $friend['id']);
   json_out(['with' => public_user($friend)] + $m);
+}
+
+// ---------- Vigilar / dejar de vigilar a un amigo ----------
+if ($method === 'POST' && $path === 'friends/watch') {
+  $me = require_user();
+  $in = body_json();
+  $handle = trim($in['handle'] ?? '');
+  $on = !empty($in['on']) ? 1 : 0;
+  if ($handle === '') fail('Falta el handle');
+
+  $pdo = db();
+  $t = $pdo->prepare('SELECT id FROM users WHERE handle = ?');
+  $t->execute([$handle]);
+  $fr = $t->fetch();
+  if (!$fr) fail('Usuario no encontrado', 404);
+
+  $s = $pdo->prepare("UPDATE friendships SET watch = ? WHERE user_id = ? AND friend_id = ? AND status = 'accepted'");
+  $s->execute([$on, $me['uid'], $fr['id']]);
+  if (!$on) {
+    $d = $pdo->prepare('DELETE FROM notifications WHERE user_id = ? AND friend_id = ?');
+    $d->execute([$me['uid'], $fr['id']]);
+  }
+  json_out(['ok' => true, 'watch' => (bool)$on]);
+}
+
+// ---------- Notificaciones de match ----------
+if ($method === 'GET' && $path === 'notifications') {
+  $me = require_user();
+  $pdo = db();
+  refresh_notifications($pdo, $me['uid']);
+  json_out(fetch_notifications($pdo, $me['uid']));
+}
+
+if ($method === 'POST' && $path === 'notifications/read') {
+  $me = require_user();
+  $in = body_json();
+  $pdo = db();
+  if (!empty($in['all'])) {
+    $s = $pdo->prepare('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL');
+    $s->execute([$me['uid']]);
+  } else {
+    $handle = trim($in['handle'] ?? '');
+    if ($handle === '') fail('Falta "handle" o "all"');
+    $t = $pdo->prepare('SELECT id FROM users WHERE handle = ?');
+    $t->execute([$handle]);
+    $fr = $t->fetch();
+    if ($fr) {
+      $s = $pdo->prepare('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND friend_id = ? AND read_at IS NULL');
+      $s->execute([$me['uid'], $fr['id']]);
+    }
+  }
+  json_out(['ok' => true]);
 }
 
 fail('Ruta no encontrada', 404);

@@ -246,11 +246,42 @@ body {
 .toast.show { opacity: 1; }
 .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
 
+/* ---------- Campanita / Notificaciones ---------- */
+.bell-btn {
+  position: absolute; top: 10px; right: 12px; z-index: 2;
+  width: 40px; height: 40px; border-radius: 12px; border: none; cursor: pointer;
+  background: rgba(255,255,255,.18); color: #fff; font-size: 1.2rem; line-height: 1;
+  display: grid; place-items: center;
+}
+.bell-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px;
+  background: var(--red); color: #fff; border-radius: 999px;
+  font-size: .66rem; font-weight: 800; display: grid; place-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.45);
+}
+.notif-row { display: flex; align-items: center; gap: 9px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.notif-row.unread { background: linear-gradient(90deg, rgba(108,92,231,.16), transparent); margin: 0 -8px; padding: 11px 8px; border-radius: 8px; }
+.notif-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); flex: none; }
+.notif-dot.read { background: transparent; }
+.notif-main { flex: 1; min-width: 0; }
+.notif-name { font-weight: 700; font-size: .92rem; }
+.notif-sub { font-size: .76rem; color: var(--muted); margin-top: 1px; }
+.notif-sub b { color: var(--text); }
+.notif-row .notif-view { flex: none; padding: 8px 14px; border-radius: 8px; border: none; color: #fff; font-weight: 800; font-size: .8rem; cursor: pointer; background: var(--blue); }
+
+/* toggle de vigilancia en la lista de amigos */
+.watch-toggle {
+  flex: none; width: 40px; height: 36px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--card-2); cursor: pointer; font-size: 1.05rem; line-height: 1; opacity: .45;
+}
+.watch-toggle.on { background: rgba(108,92,231,.25); border-color: var(--accent); opacity: 1; }
+
 </style>
 </head>
 <body>
   <!-- Header con progreso -->
   <header class="app-header">
+    <button class="bell-btn" id="btnNotifs" aria-label="Notificaciones" style="display:none">🔔<span class="bell-badge" id="notifBadge" hidden>0</span></button>
     <h1>⚽ Mundial 2026 · Mis Láminas</h1>
     <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
     <div class="progress-wrap">
@@ -377,6 +408,16 @@ body {
         <button class="act-whatsapp" id="matchWhatsapp">🟢 WhatsApp</button>
         <button class="act-copy" id="matchCopy">📄 Copiar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Notificaciones -->
+  <div class="modal-back" id="modalNotifs">
+    <div class="modal">
+      <button class="close-x" data-close>✕</button>
+      <h2>🔔 Notificaciones</h2>
+      <p class="hint">Te avisamos cuando un amigo que vigilas (🔔 en 👥 Amigos) tiene láminas que te faltan. El cruce es de tus repetidas y faltantes con las de él.</p>
+      <div id="notifsBody"></div>
     </div>
   </div>
 
@@ -1114,6 +1155,8 @@ window.ALBUM_CONFIG = {
   }
   function doLogout() {
     clearSession();
+    stopNotifPolling();
+    setBadge(0);
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
     toast('Sesión cerrada');
   }
@@ -1135,6 +1178,8 @@ window.ALBUM_CONFIG = {
       await flushDirty();
       render();
       updateCloudUI();
+      loadNotifications();      // refresca campanita con la colección ya subida
+      startNotifPolling();
     } catch (e) { /* offline: seguimos en modo local */ }
   }
 
@@ -1164,12 +1209,19 @@ window.ALBUM_CONFIG = {
           const u = f.user;
           html += `<div class="friend-row"><div class="friend-name">${escapeHtml(u.name || u.handle)}
               <div class="friend-handle">🟢 te da ${f.they_give_me} · 🔵 le das ${f.i_give_them}</div></div>
+            <button class="watch-toggle ${f.watch ? 'on' : ''}" data-h="${escapeHtml(u.handle)}" data-on="${f.watch ? 1 : 0}" title="Vigilar para avisarte de coincidencias">🔔</button>
             <button class="fr-view fr-view-btn" data-h="${escapeHtml(u.handle)}">Ver</button></div>`;
         });
       }
       wrap.innerHTML = html;
       wrap.querySelectorAll('.fr-accept').forEach((b) => b.addEventListener('click', () => acceptFriend(b.dataset.h)));
       wrap.querySelectorAll('.fr-view-btn').forEach((b) => b.addEventListener('click', () => viewMatches(b.dataset.h)));
+      wrap.querySelectorAll('.watch-toggle').forEach((b) => b.addEventListener('click', () => {
+        const on = b.dataset.on === '1' ? 0 : 1;
+        b.dataset.on = on ? '1' : '0';
+        b.classList.toggle('on', !!on);
+        toggleWatch(b.dataset.h, !!on);
+      }));
     } catch (e) { wrap.innerHTML = '<p class="hint">No se pudo cargar (¿API configurada y desplegada?).</p>'; }
   }
   async function addFriend() {
@@ -1211,6 +1263,77 @@ window.ALBUM_CONFIG = {
     return lines.join('\n');
   }
 
+  // -- Notificaciones de match --
+  let notifPollTimer = null;
+  let lastNotif = { unread: 0, items: [] };
+
+  function setBadge(n) {
+    const b = el('notifBadge');
+    if (!b) return;
+    if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.hidden = false; }
+    else b.hidden = true;
+  }
+
+  async function loadNotifications() {
+    if (!loggedIn()) return;
+    try {
+      const data = await api('/notifications');
+      lastNotif = data || { unread: 0, items: [] };
+      setBadge(lastNotif.unread || 0);
+      if (el('modalNotifs') && el('modalNotifs').classList.contains('open')) renderNotifs();
+    } catch (e) { /* silencioso: reintenta al próximo poll */ }
+  }
+
+  function renderNotifs() {
+    const wrap = el('notifsBody');
+    if (!wrap) return;
+    const items = lastNotif.items || [];
+    if (!items.length) {
+      wrap.innerHTML = '<p class="hint">No hay novedades. Cuando un amigo que vigilas tenga láminas que te faltan, aparecerá aquí. 🔔</p>';
+      return;
+    }
+    let html = '';
+    items.forEach((n) => {
+      const who = n.friend.name || n.friend.handle;
+      html += `<div class="notif-row ${n.unread ? 'unread' : ''}">
+        <span class="notif-dot ${n.unread ? '' : 'read'}"></span>
+        <div class="notif-main">
+          <div class="notif-name">${escapeHtml(who)}</div>
+          <div class="notif-sub">🟢 te puede pasar <b>${n.they_give}</b>${n.i_give ? ` · 🔵 tú le pasas <b>${n.i_give}</b>` : ''}</div>
+        </div>
+        <button class="notif-view" data-h="${escapeHtml(n.friend.handle)}">Ver</button>
+      </div>`;
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.notif-view').forEach((b) => b.addEventListener('click', () => { closeModals(); viewMatches(b.dataset.h); }));
+  }
+
+  function openNotifs() {
+    if (!loggedIn()) { toast('Inicia sesión para ver tus notificaciones'); return; }
+    el('modalNotifs').classList.add('open');
+    renderNotifs();
+    // abrir = marcar como leídas (badge a 0); el resaltado se mantiene en esta vista
+    if (lastNotif.unread > 0) {
+      api('/notifications/read', { method: 'POST', body: { all: true } }).catch(() => {});
+      lastNotif.unread = 0;
+      setBadge(0);
+    }
+  }
+
+  async function toggleWatch(handle, on) {
+    try { await api('/friends/watch', { method: 'POST', body: { handle, on } }); }
+    catch (e) { toast(e.message || 'No se pudo'); return; }
+    toast(on ? 'Vigilando 🔔' : 'Dejaste de vigilar');
+    loadNotifications();
+  }
+
+  function startNotifPolling() {
+    stopNotifPolling();
+    if (!loggedIn()) return;
+    notifPollTimer = setInterval(loadNotifications, 60000);
+  }
+  function stopNotifPolling() { if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; } }
+
   function updateCloudUI() {
     const status = el('acctStatus');
     if (status) {
@@ -1223,6 +1346,8 @@ window.ALBUM_CONFIG = {
     setVal('cfgGid', localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || '');
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
+    show('btnNotifs', loggedIn());
+    if (!loggedIn()) setBadge(0);
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
@@ -1265,6 +1390,7 @@ window.ALBUM_CONFIG = {
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnFriends', 'click', openFriends);
+    on('btnNotifs', 'click', openNotifs);
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
     on('addFriendBtn', 'click', addFriend);
@@ -1284,6 +1410,8 @@ window.ALBUM_CONFIG = {
     initGoogle();
     if (loggedIn() && cloudConfigured()) syncAfterLogin();
   });
+  // Al volver a la pestaña/app, refresca la campanita.
+  window.addEventListener('focus', () => { if (loggedIn()) loadNotifications(); });
 })();
 
 </script>

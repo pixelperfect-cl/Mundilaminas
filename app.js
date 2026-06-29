@@ -465,6 +465,8 @@
   }
   function doLogout() {
     clearSession();
+    stopNotifPolling();
+    setBadge(0);
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
     toast('Sesión cerrada');
   }
@@ -486,6 +488,8 @@
       await flushDirty();
       render();
       updateCloudUI();
+      loadNotifications();      // refresca campanita con la colección ya subida
+      startNotifPolling();
     } catch (e) { /* offline: seguimos en modo local */ }
   }
 
@@ -515,12 +519,19 @@
           const u = f.user;
           html += `<div class="friend-row"><div class="friend-name">${escapeHtml(u.name || u.handle)}
               <div class="friend-handle">🟢 te da ${f.they_give_me} · 🔵 le das ${f.i_give_them}</div></div>
+            <button class="watch-toggle ${f.watch ? 'on' : ''}" data-h="${escapeHtml(u.handle)}" data-on="${f.watch ? 1 : 0}" title="Vigilar para avisarte de coincidencias">🔔</button>
             <button class="fr-view fr-view-btn" data-h="${escapeHtml(u.handle)}">Ver</button></div>`;
         });
       }
       wrap.innerHTML = html;
       wrap.querySelectorAll('.fr-accept').forEach((b) => b.addEventListener('click', () => acceptFriend(b.dataset.h)));
       wrap.querySelectorAll('.fr-view-btn').forEach((b) => b.addEventListener('click', () => viewMatches(b.dataset.h)));
+      wrap.querySelectorAll('.watch-toggle').forEach((b) => b.addEventListener('click', () => {
+        const on = b.dataset.on === '1' ? 0 : 1;
+        b.dataset.on = on ? '1' : '0';
+        b.classList.toggle('on', !!on);
+        toggleWatch(b.dataset.h, !!on);
+      }));
     } catch (e) { wrap.innerHTML = '<p class="hint">No se pudo cargar (¿API configurada y desplegada?).</p>'; }
   }
   async function addFriend() {
@@ -562,6 +573,77 @@
     return lines.join('\n');
   }
 
+  // -- Notificaciones de match --
+  let notifPollTimer = null;
+  let lastNotif = { unread: 0, items: [] };
+
+  function setBadge(n) {
+    const b = el('notifBadge');
+    if (!b) return;
+    if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.hidden = false; }
+    else b.hidden = true;
+  }
+
+  async function loadNotifications() {
+    if (!loggedIn()) return;
+    try {
+      const data = await api('/notifications');
+      lastNotif = data || { unread: 0, items: [] };
+      setBadge(lastNotif.unread || 0);
+      if (el('modalNotifs') && el('modalNotifs').classList.contains('open')) renderNotifs();
+    } catch (e) { /* silencioso: reintenta al próximo poll */ }
+  }
+
+  function renderNotifs() {
+    const wrap = el('notifsBody');
+    if (!wrap) return;
+    const items = lastNotif.items || [];
+    if (!items.length) {
+      wrap.innerHTML = '<p class="hint">No hay novedades. Cuando un amigo que vigilas tenga láminas que te faltan, aparecerá aquí. 🔔</p>';
+      return;
+    }
+    let html = '';
+    items.forEach((n) => {
+      const who = n.friend.name || n.friend.handle;
+      html += `<div class="notif-row ${n.unread ? 'unread' : ''}">
+        <span class="notif-dot ${n.unread ? '' : 'read'}"></span>
+        <div class="notif-main">
+          <div class="notif-name">${escapeHtml(who)}</div>
+          <div class="notif-sub">🟢 te puede pasar <b>${n.they_give}</b>${n.i_give ? ` · 🔵 tú le pasas <b>${n.i_give}</b>` : ''}</div>
+        </div>
+        <button class="notif-view" data-h="${escapeHtml(n.friend.handle)}">Ver</button>
+      </div>`;
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.notif-view').forEach((b) => b.addEventListener('click', () => { closeModals(); viewMatches(b.dataset.h); }));
+  }
+
+  function openNotifs() {
+    if (!loggedIn()) { toast('Inicia sesión para ver tus notificaciones'); return; }
+    el('modalNotifs').classList.add('open');
+    renderNotifs();
+    // abrir = marcar como leídas (badge a 0); el resaltado se mantiene en esta vista
+    if (lastNotif.unread > 0) {
+      api('/notifications/read', { method: 'POST', body: { all: true } }).catch(() => {});
+      lastNotif.unread = 0;
+      setBadge(0);
+    }
+  }
+
+  async function toggleWatch(handle, on) {
+    try { await api('/friends/watch', { method: 'POST', body: { handle, on } }); }
+    catch (e) { toast(e.message || 'No se pudo'); return; }
+    toast(on ? 'Vigilando 🔔' : 'Dejaste de vigilar');
+    loadNotifications();
+  }
+
+  function startNotifPolling() {
+    stopNotifPolling();
+    if (!loggedIn()) return;
+    notifPollTimer = setInterval(loadNotifications, 60000);
+  }
+  function stopNotifPolling() { if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; } }
+
   function updateCloudUI() {
     const status = el('acctStatus');
     if (status) {
@@ -574,6 +656,8 @@
     setVal('cfgGid', localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || '');
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
+    show('btnNotifs', loggedIn());
+    if (!loggedIn()) setBadge(0);
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
@@ -616,6 +700,7 @@
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnFriends', 'click', openFriends);
+    on('btnNotifs', 'click', openNotifs);
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
     on('addFriendBtn', 'click', addFriend);
@@ -635,4 +720,6 @@
     initGoogle();
     if (loggedIn() && cloudConfigured()) syncAfterLogin();
   });
+  // Al volver a la pestaña/app, refresca la campanita.
+  window.addEventListener('focus', () => { if (loggedIn()) loadNotifications(); });
 })();

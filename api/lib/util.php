@@ -80,3 +80,64 @@ function compute_matches($pdo, $me, $fr) {
 
   return ['they_give_me' => $they, 'i_give_them' => $mine];
 }
+
+/*
+ * Recalcula las notificaciones de match para los amigos VIGILADOS de :uid.
+ * Crea/actualiza una notificación por amigo cuando él tiene repetidas que me
+ * faltan (they_give_me). Solo se "re-enciende" (vuelve a no leída) si ahora me
+ * puede dar MÁS que antes, para no ser molesto.
+ * Reutilizable por un cron (push/email) o on-demand al pedir /notifications.
+ */
+function refresh_notifications($pdo, $uid) {
+  $f = $pdo->prepare(
+    "SELECT friend_id FROM friendships
+      WHERE user_id = ? AND status = 'accepted' AND watch = 1"
+  );
+  $f->execute([$uid]);
+  $friendIds = array_map(fn($r) => (int)$r['friend_id'], $f->fetchAll());
+
+  $upsert = $pdo->prepare(
+    "INSERT INTO notifications(user_id, friend_id, they_give, i_give, sig, created_at, read_at)
+       VALUES(?,?,?,?,?,NOW(),NULL)
+     ON DUPLICATE KEY UPDATE
+       read_at    = IF(VALUES(they_give) > they_give, NULL, read_at),
+       created_at = IF(VALUES(they_give) > they_give, NOW(), created_at),
+       they_give  = VALUES(they_give),
+       i_give     = VALUES(i_give),
+       sig        = VALUES(sig)"
+  );
+  $del = $pdo->prepare('DELETE FROM notifications WHERE user_id = ? AND friend_id = ?');
+
+  foreach ($friendIds as $fid) {
+    $m = compute_matches($pdo, $uid, $fid);
+    $they = $m['they_give_me'];
+    if (!count($they)) { $del->execute([$uid, $fid]); continue; }
+    $sig = md5(implode(',', $they));
+    $upsert->execute([$uid, $fid, count($they), count($m['i_give_them']), $sig]);
+  }
+}
+
+// Lee las notificaciones de :uid (con datos del amigo) y cuántas no leídas hay.
+function fetch_notifications($pdo, $uid) {
+  $s = $pdo->prepare(
+    "SELECT n.they_give, n.i_give, n.read_at, n.created_at,
+            u.handle, u.name, u.avatar_url
+       FROM notifications n JOIN users u ON u.id = n.friend_id
+      WHERE n.user_id = ?
+      ORDER BY (n.read_at IS NULL) DESC, n.created_at DESC"
+  );
+  $s->execute([$uid]);
+  $items = []; $unread = 0;
+  foreach ($s as $r) {
+    $isUnread = ($r['read_at'] === null);
+    if ($isUnread) $unread++;
+    $items[] = [
+      'friend'     => ['handle' => $r['handle'], 'name' => $r['name'], 'avatar_url' => $r['avatar_url']],
+      'they_give'  => (int)$r['they_give'],
+      'i_give'     => (int)$r['i_give'],
+      'unread'     => $isUnread,
+      'created_at' => $r['created_at'],
+    ];
+  }
+  return ['unread' => $unread, 'items' => $items];
+}

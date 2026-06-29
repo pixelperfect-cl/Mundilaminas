@@ -34,15 +34,30 @@ body {
   background: linear-gradient(135deg, #6c5ce7 0%, #4d8dff 55%, #21c17a 100%);
   padding: 14px 16px 12px;
   box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  transition: padding .18s ease;
 }
-.app-header h1 { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: .2px; }
-.app-header .sub { font-size: .78rem; opacity: .9; margin-top: 2px; }
+.app-header h1 {
+  margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: .2px;
+  transition: font-size .18s ease;
+}
+.app-header .sub {
+  font-size: .78rem; opacity: .9; margin-top: 2px; max-height: 2em; overflow: hidden;
+  transition: opacity .15s ease, max-height .18s ease, margin-top .18s ease;
+}
 
-.progress-wrap { margin-top: 10px; }
+.progress-wrap { margin-top: 10px; transition: margin-top .18s ease; }
 .progress-bar {
   height: 12px; border-radius: 999px; background: rgba(255,255,255,.22);
-  overflow: hidden;
+  overflow: hidden; transition: height .18s ease;
 }
+
+/* Header compactado al hacer scroll (sticky, mantiene barra de progreso + datos) */
+body.scrolled .app-header { padding: 7px 16px 8px; }
+body.scrolled .app-header h1 { font-size: .95rem; }
+body.scrolled .app-header .sub { opacity: 0; max-height: 0; margin-top: 0; }
+body.scrolled .progress-wrap { margin-top: 7px; }
+body.scrolled .progress-bar { height: 8px; }
+body.scrolled .bell-btn { top: 6px; }
 .progress-fill {
   height: 100%; width: 0%;
   background: linear-gradient(90deg, #fff, #d8ffe9);
@@ -54,8 +69,9 @@ body {
 }
 
 /* ---------- Toolbar ---------- */
+/* Queda pegada justo debajo del header (su altura se publica en --header-h). */
 .toolbar {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: var(--header-h, 0px); z-index: 20;
   background: var(--bg-soft);
   padding: 10px 12px; border-bottom: 1px solid var(--line);
   display: flex; flex-direction: column; gap: 8px;

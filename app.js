@@ -800,9 +800,33 @@
     on('matchCopy', 'click', () => copyText(el('matchOutput').dataset.text || ''));
   }
 
+  // ---------- Header compacto + sticky al hacer scroll ----------
+  function setupStickyHeader() {
+    const header = document.querySelector('.app-header');
+    if (!header) return;
+    const root = document.documentElement;
+    const syncH = () => root.style.setProperty('--header-h', header.offsetHeight + 'px');
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        document.body.classList.toggle('scrolled', window.scrollY > 24);
+        syncH();                       // la altura cambia al compactar → la toolbar lo sigue
+        ticking = false;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', syncH);
+    header.addEventListener('transitionend', syncH);  // sync final tras la animación
+    syncH();
+    onScroll();                        // estado inicial correcto si la página ya viene scrolleada
+  }
+
   // ---------- Init ----------
   rebuildSidMaps();
   bind();
+  setupStickyHeader();
   render();
   updateCloudUI();
   // El script de Google es async: apenas cargue, inicializa y pinta el botón

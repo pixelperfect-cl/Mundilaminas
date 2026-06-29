@@ -42,6 +42,8 @@ function body_json() {
 function json_out($data, $code = 200) {
   http_response_code($code);
   header('Content-Type: application/json; charset=utf-8');
+  // La API es dinámica: que ni Varnish (Cloudways) ni el navegador la cacheen.
+  header('Cache-Control: no-store');
   echo json_encode($data, JSON_UNESCAPED_UNICODE);
   exit;
 }

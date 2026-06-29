@@ -762,7 +762,11 @@
   }
   // ---------- Eventos ----------
   function bind() {
-    el('search').addEventListener('input', (e) => { search = e.target.value.trim(); renderSections(); });
+    el('search').addEventListener('input', (e) => {
+      search = e.target.value.trim();
+      const sb = el('btnSearch'); if (sb) sb.classList.toggle('active', !!search);
+      renderSections();
+    });
     document.querySelectorAll('.filters button').forEach((b) => {
       b.addEventListener('click', () => {
         filter = b.dataset.filter;
@@ -789,6 +793,11 @@
 
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
+    // Lupa del header: abre/cierra el buscador cuando el header está compacto.
+    on('btnSearch', 'click', () => {
+      const open = document.body.classList.toggle('search-open');
+      if (open) { const s = el('search'); if (s) setTimeout(() => s.focus(), 0); }
+    });
     on('btnFriends', 'click', openFriends);
     on('btnNotifs', 'click', openNotifs);
     on('btnPush', 'click', togglePush);

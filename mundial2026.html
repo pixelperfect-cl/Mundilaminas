@@ -57,6 +57,22 @@ body {
   transition: opacity .15s ease, max-height .18s ease, margin-top .18s ease;
 }
 
+/* fila superior del header: [lupa] [título/sub] */
+.header-top { display: flex; align-items: center; gap: 10px; }
+.header-titles { flex: 1; min-width: 0; }
+.icon-btn {
+  flex: none; width: 38px; height: 38px; border-radius: 11px; border: none; cursor: pointer;
+  background: rgba(255,255,255,.18); color: #fff; font-size: 1.15rem; line-height: 1;
+  display: grid; place-items: center; position: relative;
+  transition: background .15s ease, transform .12s ease;
+}
+.icon-btn:active { transform: scale(.92); }
+/* la lupa solo aparece cuando el header está compacto (en hero el buscador está extendido) */
+.search-btn { display: none; }
+body.scrolled .search-btn { display: grid; }
+body.search-open .search-btn,
+.search-btn.active { background: rgba(255,255,255,.4); }
+
 .progress-wrap { margin-top: 10px; transition: margin-top .18s ease; }
 .progress-bar {
   height: 12px; border-radius: 999px; background: rgba(255,255,255,.22);
@@ -69,7 +85,6 @@ body.scrolled .app-header h1 { font-size: .95rem; }
 body.scrolled .app-header .sub { opacity: 0; max-height: 0; margin-top: 0; }
 body.scrolled .progress-wrap { margin-top: 7px; }
 body.scrolled .progress-bar { height: 8px; }
-body.scrolled .bell-btn { top: 6px; }
 .progress-fill {
   height: 100%; width: 0%;
   background: linear-gradient(90deg, #fff, #d8ffe9);
@@ -94,6 +109,16 @@ body.scrolled .bell-btn { top: 6px; }
   font-size: .95rem; outline: none;
 }
 .search::placeholder { color: var(--muted); }
+/* El buscador se colapsa a la lupa del header cuando se scrollea (salvo que el usuario lo abra). */
+.toolbar { transition: gap .2s ease; }
+.toolbar .search {
+  max-height: 52px; overflow: hidden;
+  transition: max-height .22s ease, opacity .18s ease, padding .22s ease, border-width .22s ease;
+}
+body.scrolled:not(.search-open) .toolbar { gap: 0; }
+body.scrolled:not(.search-open) .toolbar .search {
+  max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border-width: 0;
+}
 .filters { display: flex; gap: 6px; }
 .filters button {
   flex: 1; padding: 9px 4px; border-radius: 999px; border: 1px solid var(--line);
@@ -172,11 +197,21 @@ body.scrolled .bell-btn { top: 6px; }
 }
 .bottom-bar button {
   flex: 1; padding: 13px 6px; border-radius: 12px; border: none; cursor: pointer;
-  font-weight: 800; font-size: .9rem; color: #fff;
+  font-weight: 800; font-size: .9rem; color: #fff; position: relative;
 }
 .btn-lists { background: var(--green); }
-.btn-friends { background: var(--blue); }
+.btn-notifs { background: var(--blue); }
 .btn-menu { background: var(--card-2); border: 1px solid var(--line) !important; }
+
+/* FAB flotante de Amigos (sobre la barra inferior) */
+.fab-friends {
+  position: fixed; right: 16px; bottom: calc(80px + var(--safe-b)); z-index: 45;
+  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--accent); color: #fff; font-size: 1.5rem; line-height: 1;
+  box-shadow: 0 8px 22px rgba(108,92,231,.5);
+  display: grid; place-items: center; transition: transform .12s ease;
+}
+.fab-friends:active { transform: scale(.93); }
 
 /* ---------- Amigos ---------- */
 .add-friend { display: flex; gap: 6px; margin: 6px 0 4px; }
@@ -215,6 +250,20 @@ body.scrolled .bell-btn { top: 6px; }
   border: 1px solid var(--line); border-radius: 999px; width: 34px; height: 34px;
   font-size: 1.1rem; cursor: pointer;
 }
+
+/* ---------- Drawer lateral (panel de Amigos) ---------- */
+.modal-back.drawer {
+  display: flex; align-items: stretch; justify-content: flex-end;
+  visibility: hidden; opacity: 0; pointer-events: none;
+  transition: opacity .25s ease, visibility .25s ease;
+}
+.modal-back.drawer.open { visibility: visible; opacity: 1; pointer-events: auto; }
+.modal-back.drawer .modal {
+  width: min(440px, 90vw); max-width: none; height: 100%; max-height: 100%;
+  margin: 0; border-radius: 0; border-top: none; border-left: 2px solid var(--accent);
+  transform: translateX(100%); transition: transform .28s cubic-bezier(.22,.61,.36,1);
+}
+.modal-back.drawer.open .modal { transform: translateX(0); }
 .tab-row { display: flex; gap: 6px; margin-bottom: 12px; }
 .tab-row button {
   flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--line);
@@ -267,14 +316,9 @@ body.scrolled .bell-btn { top: 6px; }
 .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
 
 /* ---------- Campanita / Notificaciones ---------- */
-.bell-btn {
-  position: absolute; top: 10px; right: 12px; z-index: 2;
-  width: 40px; height: 40px; border-radius: 12px; border: none; cursor: pointer;
-  background: rgba(255,255,255,.18); color: #fff; font-size: 1.2rem; line-height: 1;
-  display: grid; place-items: center;
-}
+/* El badge va sobre el botón "Avisos" de la barra inferior. */
 .bell-badge {
-  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px;
+  position: absolute; top: 4px; right: 14px; min-width: 18px; height: 18px; padding: 0 4px;
   background: var(--red); color: #fff; border-radius: 999px;
   font-size: .66rem; font-weight: 800; display: grid; place-items: center;
   box-shadow: 0 2px 6px rgba(0,0,0,.45);
@@ -354,9 +398,13 @@ body.gated { overflow: hidden; }
 
   <!-- Header con progreso -->
   <header class="app-header">
-    <button class="bell-btn" id="btnNotifs" aria-label="Notificaciones" style="display:none">🔔<span class="bell-badge" id="notifBadge" hidden>0</span></button>
-    <h1>⚽ Mundial 2026 · Mis Láminas</h1>
-    <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
+    <div class="header-top">
+      <button class="icon-btn search-btn" id="btnSearch" aria-label="Buscar">🔍</button>
+      <div class="header-titles">
+        <h1>⚽ Mundial 2026 · Mis Láminas</h1>
+        <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
+      </div>
+    </div>
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-label">
@@ -382,9 +430,12 @@ body.gated { overflow: hidden; }
   <!-- Barra inferior -->
   <nav class="bottom-bar">
     <button class="btn-lists" id="btnLists">📋 Listas</button>
-    <button class="btn-friends" id="btnFriends">👥 Amigos</button>
+    <button class="btn-notifs" id="btnNotifs" aria-label="Avisos" style="display:none">🔔 Avisos<span class="bell-badge" id="notifBadge" hidden>0</span></button>
     <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
   </nav>
+
+  <!-- FAB: Amigos (abre el panel lateral) -->
+  <button class="fab-friends" id="btnFriends" aria-label="Amigos">👥</button>
 
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
@@ -448,12 +499,16 @@ body.gated { overflow: hidden; }
     </div>
   </div>
 
-  <!-- Modal: Amigos -->
-  <div class="modal-back" id="modalFriends">
+  <!-- Drawer: Amigos / Social -->
+  <div class="modal-back drawer" id="modalFriends">
     <div class="modal">
       <button class="close-x" data-close>✕</button>
       <h2>👥 Amigos</h2>
       <div id="friendsGate"><p class="hint">Inicia sesión con Google (en ⚙️ Menú → Cuenta) para usar amigos y sincronizar tu colección.</p></div>
+
+      <!-- Mis álbumes compartidos (Fase 3) -->
+      <div id="albumsSection" hidden></div>
+
       <p class="hint">Tu código: <b id="myCode">—</b>
         <button class="mini-btn" id="copyCode">copiar</button>
       </p>
@@ -1520,7 +1575,11 @@ window.ALBUM_CONFIG = {
   }
   // ---------- Eventos ----------
   function bind() {
-    el('search').addEventListener('input', (e) => { search = e.target.value.trim(); renderSections(); });
+    el('search').addEventListener('input', (e) => {
+      search = e.target.value.trim();
+      const sb = el('btnSearch'); if (sb) sb.classList.toggle('active', !!search);
+      renderSections();
+    });
     document.querySelectorAll('.filters button').forEach((b) => {
       b.addEventListener('click', () => {
         filter = b.dataset.filter;
@@ -1547,6 +1606,11 @@ window.ALBUM_CONFIG = {
 
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
+    // Lupa del header: abre/cierra el buscador cuando el header está compacto.
+    on('btnSearch', 'click', () => {
+      const open = document.body.classList.toggle('search-open');
+      if (open) { const s = el('search'); if (s) setTimeout(() => s.focus(), 0); }
+    });
     on('btnFriends', 'click', openFriends);
     on('btnNotifs', 'click', openNotifs);
     on('btnPush', 'click', togglePush);

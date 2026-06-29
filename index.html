@@ -27,9 +27,13 @@
 
   <!-- Header con progreso -->
   <header class="app-header">
-    <button class="bell-btn" id="btnNotifs" aria-label="Notificaciones" style="display:none">🔔<span class="bell-badge" id="notifBadge" hidden>0</span></button>
-    <h1>⚽ Mundial 2026 · Mis Láminas</h1>
-    <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
+    <div class="header-top">
+      <button class="icon-btn search-btn" id="btnSearch" aria-label="Buscar">🔍</button>
+      <div class="header-titles">
+        <h1>⚽ Mundial 2026 · Mis Láminas</h1>
+        <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
+      </div>
+    </div>
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-label">
@@ -55,9 +59,12 @@
   <!-- Barra inferior -->
   <nav class="bottom-bar">
     <button class="btn-lists" id="btnLists">📋 Listas</button>
-    <button class="btn-friends" id="btnFriends">👥 Amigos</button>
+    <button class="btn-notifs" id="btnNotifs" aria-label="Avisos" style="display:none">🔔 Avisos<span class="bell-badge" id="notifBadge" hidden>0</span></button>
     <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
   </nav>
+
+  <!-- FAB: Amigos (abre el panel lateral) -->
+  <button class="fab-friends" id="btnFriends" aria-label="Amigos">👥</button>
 
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
@@ -121,12 +128,16 @@
     </div>
   </div>
 
-  <!-- Modal: Amigos -->
-  <div class="modal-back" id="modalFriends">
+  <!-- Drawer: Amigos / Social -->
+  <div class="modal-back drawer" id="modalFriends">
     <div class="modal">
       <button class="close-x" data-close>✕</button>
       <h2>👥 Amigos</h2>
       <div id="friendsGate"><p class="hint">Inicia sesión con Google (en ⚙️ Menú → Cuenta) para usar amigos y sincronizar tu colección.</p></div>
+
+      <!-- Mis álbumes compartidos (Fase 3) -->
+      <div id="albumsSection" hidden></div>
+
       <p class="hint">Tu código: <b id="myCode">—</b>
         <button class="mini-btn" id="copyCode">copiar</button>
       </p>

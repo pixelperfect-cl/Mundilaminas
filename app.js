@@ -16,7 +16,7 @@
   // (al desplegar): URL de la API en Cloudways y Client ID de Google.
   // También se pueden setear desde el menú (se guardan en localStorage).
   const DEFAULT_API_BASE = 'https://phpstack-1279051-6519515.cloudwaysapps.com';
-  const DEFAULT_CLIENT_ID = '';  // ← pega aquí el Client ID de Google cuando lo crees
+  const DEFAULT_CLIENT_ID = '598312536196-siqndl4beehru3lnvp6vlqica4ufc27m.apps.googleusercontent.com';
 
   // ---------- Estado ----------
   let counts = loadJSON(LS_COUNTS, {});            // { stickerKey: copiasQueTengo }

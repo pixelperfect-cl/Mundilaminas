@@ -29,4 +29,13 @@ return [
     'https://pixelperfect-cl.github.io',
     'http://localhost:8000',
   ],
+
+  // Web Push (VAPID). Genera las llaves con:
+  //   php -r "require 'vendor/autoload.php'; var_dump(Minishlink\\WebPush\\VAPID::createVapidKeys());"
+  // La clave 'public' también va en app.js (PUSH_VAPID_PUBLIC).
+  'vapid' => [
+    'subject' => 'mailto:tucorreo@ejemplo.com',
+    'public'  => 'TU_VAPID_PUBLIC',
+    'private' => 'TU_VAPID_PRIVATE',
+  ],
 ];

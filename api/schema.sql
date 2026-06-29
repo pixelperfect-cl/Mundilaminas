@@ -51,8 +51,23 @@ CREATE TABLE IF NOT EXISTS notifications (
   sig         CHAR(32) NOT NULL DEFAULT '',            -- firma del set "they_give_me" (evita repetir)
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   read_at     DATETIME DEFAULT NULL,                   -- NULL = no leída
+  pushed_at   DATETIME DEFAULT NULL,                   -- último envío de push (para no repetir)
   PRIMARY KEY (user_id, friend_id),
   KEY idx_user_unread (user_id, read_at),
   CONSTRAINT fk_no_user   FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_no_friend FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Suscripciones de Web Push (una por navegador/dispositivo).
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id     BIGINT UNSIGNED NOT NULL,
+  endpoint    VARCHAR(512) NOT NULL,                   -- URL del push service (FCM, Mozilla, etc.)
+  p256dh      VARCHAR(255) NOT NULL,
+  auth        VARCHAR(255) NOT NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uniq_endpoint (endpoint(191)),
+  KEY idx_user (user_id),
+  CONSTRAINT fk_ps_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

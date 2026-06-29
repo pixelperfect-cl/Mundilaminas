@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <meta name="theme-color" content="#6c5ce7" />
   <title>Mundial 2026 · Mis Láminas</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -146,6 +150,7 @@
       <button class="close-x" data-close>✕</button>
       <h2>🔔 Notificaciones</h2>
       <p class="hint">Te avisamos cuando un amigo que vigilas (🔔 en 👥 Amigos) tiene láminas que te faltan. El cruce es de tus repetidas y faltantes con las de él.</p>
+      <button class="push-toggle" id="btnPush" style="display:none">📱 Activar avisos al teléfono</button>
       <div id="notifsBody"></div>
     </div>
   </div>

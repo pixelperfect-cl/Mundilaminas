@@ -1,2 +1,5 @@
 # Nunca subir la config real (credenciales, secretos)
 config.php
+
+# Dependencias de Composer (se instalan en el server con: composer install)
+vendor/

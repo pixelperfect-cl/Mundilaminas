@@ -17,6 +17,8 @@
   // También se pueden setear desde el menú (se guardan en localStorage).
   const DEFAULT_API_BASE = 'https://phpstack-1279051-6519515.cloudwaysapps.com';
   const DEFAULT_CLIENT_ID = '598312536196-siqndl4beehru3lnvp6vlqica4ufc27m.apps.googleusercontent.com';
+  // Clave pública VAPID para Web Push (la privada vive solo en el server).
+  const PUSH_VAPID_PUBLIC = 'BAVsswPfELLnzsdNvZgX3P5T0FCHcJ03FNNRDOR6Eqzl5m8huHpJrfZv1Goo18pcYn0GUzZhgFqkcW-W32RdocI';
 
   // ---------- Estado ----------
   let counts = loadJSON(LS_COUNTS, {});            // { stickerKey: copiasQueTengo }
@@ -621,6 +623,7 @@
   function openNotifs() {
     if (!loggedIn()) { toast('Inicia sesión para ver tus notificaciones'); return; }
     el('modalNotifs').classList.add('open');
+    refreshPushButton();
     renderNotifs();
     // abrir = marcar como leídas (badge a 0); el resaltado se mantiene en esta vista
     if (lastNotif.unread > 0) {
@@ -644,6 +647,72 @@
   }
   function stopNotifPolling() { if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; } }
 
+  // -- Web Push (avisos al teléfono) --
+  let swReg = null;
+
+  function pushSupported() {
+    return 'serviceWorker' in navigator && 'PushManager' in window &&
+           'Notification' in window && window.isSecureContext;
+  }
+  async function registerSW() {
+    if (!('serviceWorker' in navigator)) return null;
+    try { swReg = await navigator.serviceWorker.register('sw.js'); return swReg; }
+    catch (e) { return null; }
+  }
+  function urlB64ToUint8Array(base64) {
+    const pad = '='.repeat((4 - (base64.length % 4)) % 4);
+    const b64 = (base64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(b64);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+  async function currentPushSub() {
+    if (!swReg) return null;
+    try { return await swReg.pushManager.getSubscription(); } catch (e) { return null; }
+  }
+  async function refreshPushButton() {
+    const btn = el('btnPush');
+    if (!btn) return;
+    if (!loggedIn() || !pushSupported()) { btn.style.display = 'none'; return; }
+    btn.style.display = '';
+    const sub = await currentPushSub();
+    const on = !!sub && Notification.permission === 'granted';
+    btn.classList.toggle('on', on);
+    btn.dataset.on = on ? '1' : '0';
+    btn.textContent = on ? '✅ Avisos al teléfono activados (tocar para desactivar)' : '📱 Activar avisos al teléfono';
+  }
+  async function enablePush() {
+    if (!pushSupported()) { toast('Tu navegador/dispositivo no soporta avisos push'); return; }
+    if (!swReg) await registerSW();
+    if (!swReg) { toast('No se pudo preparar los avisos'); return; }
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('Diste permiso denegado a las notificaciones'); return; }
+    try {
+      const sub = await swReg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(PUSH_VAPID_PUBLIC),
+      });
+      await api('/push/subscribe', { method: 'POST', body: { subscription: sub.toJSON() } });
+      toast('Avisos activados 📱');
+    } catch (e) { toast('No se pudo activar (' + (e.message || 'error') + ')'); }
+    refreshPushButton();
+  }
+  async function disablePush() {
+    const sub = await currentPushSub();
+    if (sub) {
+      try { await api('/push/unsubscribe', { method: 'POST', body: { endpoint: sub.endpoint } }); } catch (e) {}
+      try { await sub.unsubscribe(); } catch (e) {}
+    }
+    toast('Avisos al teléfono desactivados');
+    refreshPushButton();
+  }
+  function togglePush() {
+    const btn = el('btnPush');
+    if (btn && btn.dataset.on === '1') disablePush(); else enablePush();
+  }
+
   function updateCloudUI() {
     const status = el('acctStatus');
     if (status) {
@@ -658,6 +727,7 @@
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
     show('btnNotifs', loggedIn());
     if (!loggedIn()) setBadge(0);
+    refreshPushButton();
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
@@ -701,6 +771,7 @@
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnFriends', 'click', openFriends);
     on('btnNotifs', 'click', openNotifs);
+    on('btnPush', 'click', togglePush);
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
     on('addFriendBtn', 'click', addFriend);
@@ -719,6 +790,7 @@
   window.addEventListener('load', () => {
     initGoogle();
     if (loggedIn() && cloudConfigured()) syncAfterLogin();
+    registerSW().then(refreshPushButton);   // prepara el Service Worker para push
   });
   // Al volver a la pestaña/app, refresca la campanita.
   window.addEventListener('focus', () => { if (loggedIn()) loadNotifications(); });

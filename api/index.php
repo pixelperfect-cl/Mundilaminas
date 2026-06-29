@@ -269,4 +269,47 @@ if ($method === 'POST' && $path === 'notifications/read') {
   json_out(['ok' => true]);
 }
 
+// ---------- Web Push: suscribir / desuscribir ----------
+if ($method === 'POST' && $path === 'push/subscribe') {
+  $me  = require_user();
+  $in  = body_json();
+  $sub = $in['subscription'] ?? $in;            // acepta {subscription:{...}} o el objeto directo
+  $endpoint = $sub['endpoint'] ?? '';
+  $p256dh   = $sub['keys']['p256dh'] ?? '';
+  $auth     = $sub['keys']['auth'] ?? '';
+  if (!$endpoint || !$p256dh || !$auth) fail('Suscripción de push inválida');
+
+  $pdo = db();
+  $s = $pdo->prepare(
+    'INSERT INTO push_subscriptions(user_id, endpoint, p256dh, auth, created_at)
+       VALUES(?,?,?,?,NOW())
+     ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), p256dh = VALUES(p256dh), auth = VALUES(auth)'
+  );
+  $s->execute([$me['uid'], $endpoint, $p256dh, $auth]);
+
+  // Push de bienvenida para confirmar de inmediato que funciona.
+  require_once __DIR__ . '/lib/push.php';
+  @send_push_to_user($pdo, $me['uid'], [
+    'title' => '🔔 Avisos activados',
+    'body'  => 'Te avisaremos cuando un amigo tenga láminas que te faltan.',
+    'url'   => 'https://pixelperfect-cl.github.io/Mundilaminas/',
+  ]);
+  json_out(['ok' => true]);
+}
+
+if ($method === 'POST' && $path === 'push/unsubscribe') {
+  $me = require_user();
+  $in = body_json();
+  $endpoint = $in['endpoint'] ?? '';
+  $pdo = db();
+  if ($endpoint) {
+    $s = $pdo->prepare('DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?');
+    $s->execute([$me['uid'], $endpoint]);
+  } else {
+    $s = $pdo->prepare('DELETE FROM push_subscriptions WHERE user_id = ?');
+    $s->execute([$me['uid']]);
+  }
+  json_out(['ok' => true]);
+}
+
 fail('Ruta no encontrada', 404);

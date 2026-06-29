@@ -1,0 +1,16 @@
+{
+  "name": "Mundial 2026 · Mis Láminas",
+  "short_name": "Mis Láminas",
+  "description": "Gestiona tu álbum Mundial 2026: marca láminas, faltantes y repetidas, y cambia con amigos.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1226",
+  "theme_color": "#6c5ce7",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

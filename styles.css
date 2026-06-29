@@ -267,3 +267,10 @@ body {
   background: var(--card-2); cursor: pointer; font-size: 1.05rem; line-height: 1; opacity: .45;
 }
 .watch-toggle.on { background: rgba(108,92,231,.25); border-color: var(--accent); opacity: 1; }
+
+.push-toggle {
+  width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--card-2); color: var(--text); font-weight: 800; font-size: .9rem;
+  cursor: pointer; margin: 4px 0 12px;
+}
+.push-toggle.on { background: rgba(33,193,122,.18); border-color: var(--green); }

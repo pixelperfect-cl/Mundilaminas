@@ -29,23 +29,27 @@ function send_push_to_user($pdo, $uid, $payload) {
   $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
   $byEndpoint = [];
   foreach ($subs as $s) {
-    $byEndpoint[$s['endpoint']] = $s['id'];
-    $sub = Subscription::create([
-      'endpoint' => $s['endpoint'],
-      'keys'     => ['p256dh' => $s['p256dh'], 'auth' => $s['auth']],
-    ]);
-    $webPush->queueNotification($sub, $json);
+    try {
+      $byEndpoint[$s['endpoint']] = $s['id'];
+      $sub = Subscription::create([
+        'endpoint' => $s['endpoint'],
+        'keys'     => ['p256dh' => $s['p256dh'], 'auth' => $s['auth']],
+      ]);
+      $webPush->queueNotification($sub, $json);
+    } catch (\Throwable $e) { /* suscripción inválida: se ignora */ }
   }
 
   $sent = 0;
   $del = $pdo->prepare('DELETE FROM push_subscriptions WHERE id = ?');
-  foreach ($webPush->flush() as $report) {
-    if ($report->isSuccess()) {
-      $sent++;
-    } elseif ($report->isSubscriptionExpired()) {
-      $ep = $report->getEndpoint();
-      if (isset($byEndpoint[$ep])) $del->execute([$byEndpoint[$ep]]);
+  try {
+    foreach ($webPush->flush() as $report) {
+      if ($report->isSuccess()) {
+        $sent++;
+      } elseif ($report->isSubscriptionExpired()) {
+        $ep = $report->getEndpoint();
+        if (isset($byEndpoint[$ep])) $del->execute([$byEndpoint[$ep]]);
+      }
     }
-  }
+  } catch (\Throwable $e) { /* no romper el flujo por un fallo de envío */ }
   return $sent;
 }

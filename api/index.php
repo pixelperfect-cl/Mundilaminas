@@ -288,12 +288,14 @@ if ($method === 'POST' && $path === 'push/subscribe') {
   $s->execute([$me['uid'], $endpoint, $p256dh, $auth]);
 
   // Push de bienvenida para confirmar de inmediato que funciona.
-  require_once __DIR__ . '/lib/push.php';
-  @send_push_to_user($pdo, $me['uid'], [
-    'title' => '🔔 Avisos activados',
-    'body'  => 'Te avisaremos cuando un amigo tenga láminas que te faltan.',
-    'url'   => 'https://pixelperfect-cl.github.io/Mundilaminas/',
-  ]);
+  try {
+    require_once __DIR__ . '/lib/push.php';
+    send_push_to_user($pdo, $me['uid'], [
+      'title' => '🔔 Avisos activados',
+      'body'  => 'Te avisaremos cuando un amigo tenga láminas que te faltan.',
+      'url'   => 'https://pixelperfect-cl.github.io/Mundilaminas/',
+    ]);
+  } catch (\Throwable $e) { /* el alta igual fue exitosa */ }
   json_out(['ok' => true]);
 }
 

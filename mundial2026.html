@@ -287,9 +287,55 @@ body {
 }
 .push-toggle.on { background: rgba(33,193,122,.18); border-color: var(--green); }
 
+/* ---------- Gate de inicio (login obligatorio) ---------- */
+body.gated { overflow: hidden; }
+.login-gate {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center; padding: 24px;
+  padding-bottom: calc(24px + var(--safe-b));
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(108,92,231,.45), transparent 60%),
+    linear-gradient(160deg, var(--bg-soft), var(--bg));
+  overflow-y: auto;
+}
+.login-gate[hidden] { display: none; }
+.gate-card {
+  width: 100%; max-width: 420px; text-align: center;
+  background: rgba(32,38,74,.72); border: 1px solid var(--line);
+  border-radius: 20px; padding: 34px 26px 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  backdrop-filter: blur(6px);
+}
+.gate-logo { font-size: 3.2rem; line-height: 1; margin-bottom: 8px; }
+.gate-card h1 {
+  margin: 0 0 12px; font-size: 1.5rem; font-weight: 800; letter-spacing: .2px; line-height: 1.15;
+}
+.gate-pitch { margin: 0 auto 22px; color: var(--muted); font-size: .92rem; max-width: 320px; }
+.gate-btn { display: flex; justify-content: center; min-height: 44px; }
+.gate-loading { color: var(--muted); font-size: .82rem; margin: 10px 0 0; }
+.gate-note {
+  margin: 18px auto 0; max-width: 340px; font-size: .82rem; color: var(--text);
+  background: rgba(108,92,231,.16); border: 1px solid var(--accent);
+  border-radius: 12px; padding: 10px 13px; line-height: 1.4;
+}
+.gate-foot { margin: 22px auto 0; max-width: 320px; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+
 </style>
 </head>
 <body>
+  <!-- Gate de inicio: login obligatorio con Google -->
+  <div class="login-gate" id="loginGate" hidden>
+    <div class="gate-card">
+      <div class="gate-logo">⚽</div>
+      <h1>Mundial 2026<br />Mis Láminas</h1>
+      <p class="gate-pitch">Lleva tu álbum Panini, intercambia con amigos y recibe avisos cuando alguien tenga las láminas que te faltan.</p>
+      <div class="gate-btn" id="gateBtn"></div>
+      <p class="gate-loading" id="gateLoading">Cargando inicio de sesión…</p>
+      <p class="gate-note" id="gateLocalNote" hidden>📦 Tienes una colección guardada en este dispositivo. Inicia sesión para guardarla en tu cuenta y no perderla.</p>
+      <p class="gate-foot">Usamos tu cuenta de Google solo para identificarte y sincronizar tu álbum entre dispositivos.</p>
+    </div>
+  </div>
+
   <!-- Header con progreso -->
   <header class="app-header">
     <button class="bell-btn" id="btnNotifs" aria-label="Notificaciones" style="display:none">🔔<span class="bell-badge" id="notifBadge" hidden>0</span></button>
@@ -1143,13 +1189,25 @@ window.ALBUM_CONFIG = {
     google.accounts.id.initialize({ client_id: clientId(), callback: onGoogleCredential });
     googleReady = true;
   }
+  // Espera a que cargue el script de Google (async) y ejecuta cb. ~5s de margen.
+  function whenGoogleReady(cb, tries = 50) {
+    if (window.google && google.accounts && google.accounts.id) { cb(); return; }
+    if (tries <= 0) return;
+    setTimeout(() => whenGoogleReady(cb, tries - 1), 100);
+  }
+  function renderGoogleButton(containerId, width) {
+    const cont = el(containerId);
+    if (!cont || !googleReady) return false;
+    cont.innerHTML = '';
+    google.accounts.id.renderButton(cont, { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', width: width || undefined });
+    return true;
+  }
   function promptGoogle() {
     if (!cloudConfigured()) { toast('Falta configurar la URL de la API'); return; }
     if (!clientId()) { toast('Falta el Client ID de Google'); return; }
     initGoogle();
     if (!googleReady) { toast('Google aún no carga, reintenta'); return; }
-    const cont = el('gbtn');
-    if (cont) { cont.innerHTML = ''; google.accounts.id.renderButton(cont, { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill' }); }
+    renderGoogleButton('gbtn');
     google.accounts.id.prompt();
   }
   async function onGoogleCredential(resp) {
@@ -1409,6 +1467,24 @@ window.ALBUM_CONFIG = {
     if (btn && btn.dataset.on === '1') disablePush(); else enablePush();
   }
 
+  // ¿Hay una colección guardada en este dispositivo (de antes de iniciar sesión)?
+  function hasLocalData() {
+    return Object.keys(counts).some((k) => (counts[k] || 0) > 0);
+  }
+  // Muestra/oculta el gate de inicio según haya sesión. Sin sesión no se usa la app.
+  function updateGate() {
+    const gate = el('loginGate');
+    if (!gate) return;
+    const blocked = !loggedIn();
+    gate.hidden = !blocked;
+    document.body.classList.toggle('gated', blocked);
+    if (blocked) {
+      const note = el('gateLocalNote'); if (note) note.hidden = !hasLocalData();
+      const ok = renderGoogleButton('gateBtn');
+      const loading = el('gateLoading'); if (loading) loading.hidden = ok;
+    }
+  }
+
   function updateCloudUI() {
     const status = el('acctStatus');
     if (status) {
@@ -1424,6 +1500,7 @@ window.ALBUM_CONFIG = {
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
+    updateGate();
   }
   // ---------- Eventos ----------
   function bind() {
@@ -1470,9 +1547,13 @@ window.ALBUM_CONFIG = {
   bind();
   render();
   updateCloudUI();
-  // Inicializa Google y sincroniza si ya hay sesión (cuando todo cargó).
+  // El script de Google es async: apenas cargue, inicializa y pinta el botón
+  // del gate (login obligatorio). Robusto aunque cargue después del 'load'.
+  whenGoogleReady(() => { initGoogle(); updateGate(); });
+  // Sincroniza si ya hay sesión y prepara el Service Worker para push.
   window.addEventListener('load', () => {
     initGoogle();
+    updateGate();
     if (loggedIn() && cloudConfigured()) syncAfterLogin();
     registerSW().then(refreshPushButton);   // prepara el Service Worker para push
   });

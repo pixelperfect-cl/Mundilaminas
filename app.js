@@ -447,13 +447,25 @@
     google.accounts.id.initialize({ client_id: clientId(), callback: onGoogleCredential });
     googleReady = true;
   }
+  // Espera a que cargue el script de Google (async) y ejecuta cb. ~5s de margen.
+  function whenGoogleReady(cb, tries = 50) {
+    if (window.google && google.accounts && google.accounts.id) { cb(); return; }
+    if (tries <= 0) return;
+    setTimeout(() => whenGoogleReady(cb, tries - 1), 100);
+  }
+  function renderGoogleButton(containerId, width) {
+    const cont = el(containerId);
+    if (!cont || !googleReady) return false;
+    cont.innerHTML = '';
+    google.accounts.id.renderButton(cont, { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', width: width || undefined });
+    return true;
+  }
   function promptGoogle() {
     if (!cloudConfigured()) { toast('Falta configurar la URL de la API'); return; }
     if (!clientId()) { toast('Falta el Client ID de Google'); return; }
     initGoogle();
     if (!googleReady) { toast('Google aún no carga, reintenta'); return; }
-    const cont = el('gbtn');
-    if (cont) { cont.innerHTML = ''; google.accounts.id.renderButton(cont, { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill' }); }
+    renderGoogleButton('gbtn');
     google.accounts.id.prompt();
   }
   async function onGoogleCredential(resp) {
@@ -713,6 +725,24 @@
     if (btn && btn.dataset.on === '1') disablePush(); else enablePush();
   }
 
+  // ¿Hay una colección guardada en este dispositivo (de antes de iniciar sesión)?
+  function hasLocalData() {
+    return Object.keys(counts).some((k) => (counts[k] || 0) > 0);
+  }
+  // Muestra/oculta el gate de inicio según haya sesión. Sin sesión no se usa la app.
+  function updateGate() {
+    const gate = el('loginGate');
+    if (!gate) return;
+    const blocked = !loggedIn();
+    gate.hidden = !blocked;
+    document.body.classList.toggle('gated', blocked);
+    if (blocked) {
+      const note = el('gateLocalNote'); if (note) note.hidden = !hasLocalData();
+      const ok = renderGoogleButton('gateBtn');
+      const loading = el('gateLoading'); if (loading) loading.hidden = ok;
+    }
+  }
+
   function updateCloudUI() {
     const status = el('acctStatus');
     if (status) {
@@ -728,6 +758,7 @@
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
+    updateGate();
   }
   // ---------- Eventos ----------
   function bind() {
@@ -774,9 +805,13 @@
   bind();
   render();
   updateCloudUI();
-  // Inicializa Google y sincroniza si ya hay sesión (cuando todo cargó).
+  // El script de Google es async: apenas cargue, inicializa y pinta el botón
+  // del gate (login obligatorio). Robusto aunque cargue después del 'load'.
+  whenGoogleReady(() => { initGoogle(); updateGate(); });
+  // Sincroniza si ya hay sesión y prepara el Service Worker para push.
   window.addEventListener('load', () => {
     initGoogle();
+    updateGate();
     if (loggedIn() && cloudConfigured()) syncAfterLogin();
     registerSW().then(refreshPushButton);   // prepara el Service Worker para push
   });

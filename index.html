@@ -12,6 +12,19 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Gate de inicio: login obligatorio con Google -->
+  <div class="login-gate" id="loginGate" hidden>
+    <div class="gate-card">
+      <div class="gate-logo">⚽</div>
+      <h1>Mundial 2026<br />Mis Láminas</h1>
+      <p class="gate-pitch">Lleva tu álbum Panini, intercambia con amigos y recibe avisos cuando alguien tenga las láminas que te faltan.</p>
+      <div class="gate-btn" id="gateBtn"></div>
+      <p class="gate-loading" id="gateLoading">Cargando inicio de sesión…</p>
+      <p class="gate-note" id="gateLocalNote" hidden>📦 Tienes una colección guardada en este dispositivo. Inicia sesión para guardarla en tu cuenta y no perderla.</p>
+      <p class="gate-foot">Usamos tu cuenta de Google solo para identificarte y sincronizar tu álbum entre dispositivos.</p>
+    </div>
+  </div>
+
   <!-- Header con progreso -->
   <header class="app-header">
     <button class="bell-btn" id="btnNotifs" aria-label="Notificaciones" style="display:none">🔔<span class="bell-badge" id="notifBadge" hidden>0</span></button>

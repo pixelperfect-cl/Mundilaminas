@@ -123,6 +123,7 @@
       anyVisible = true;
 
       const ss = sectionStats(section);
+      const secPct = ss.total ? Math.round((ss.have / ss.total) * 100) : 0;
       const isOpen = openSections.has(section.id) || !!search || filter !== 'all';
 
       const secEl = document.createElement('div');
@@ -143,6 +144,7 @@
           <div class="meta">${section.kind === 'team' ? 'Grupo ' + section.group + (section.page ? ' · pág. ' + section.page : '') : section.title}</div>
         </div>
         <div class="section-mini ${ss.have === ss.total ? 'done' : ''}">${ss.have}/${ss.total}</div>
+        <div class="sec-progress ${ss.have === ss.total ? 'done' : ''}" aria-hidden="true"><i style="width:${secPct}%"></i></div>
       `;
       head.addEventListener('click', () => {
         if (openSections.has(section.id)) openSections.delete(section.id);
@@ -198,7 +200,14 @@
       if (miniEl && section) {
         const ss = sectionStats(section);
         miniEl.textContent = `${ss.have}/${ss.total}`;
-        miniEl.classList.toggle('done', ss.have === ss.total);
+        const done = ss.have === ss.total;
+        miniEl.classList.toggle('done', done);
+        const bar = miniEl.parentElement && miniEl.parentElement.querySelector('.sec-progress');
+        if (bar) {
+          bar.classList.toggle('done', done);
+          const fill = bar.querySelector('i');
+          if (fill) fill.style.width = (ss.total ? Math.round((ss.have / ss.total) * 100) : 0) + '%';
+        }
       }
       // si hay filtro activo y deja de calzar, re-render para ocultarla
       if (filter !== 'all' && !matchesFilter(s)) renderSections();

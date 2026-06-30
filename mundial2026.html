@@ -161,6 +161,7 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
 .section-head {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 14px; cursor: pointer; user-select: none;
+  position: relative;
 }
 .section-head .chev { transition: transform .2s; font-size: .8rem; color: var(--muted); }
 .section.open .section-head .chev { transform: rotate(90deg); }
@@ -181,6 +182,19 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
   background: var(--card-2); color: var(--muted); flex: none;
 }
 .section-mini.done { background: var(--green-d); color: #d6ffe9; }
+
+/* Barra de progreso por país: hairline en la base de la cabecera, sutil. */
+.sec-progress {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--hair); overflow: hidden; pointer-events: none;
+}
+.sec-progress > i {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 0 2px 2px 0;
+  transition: width .35s ease;
+}
+.sec-progress.done > i { background: linear-gradient(90deg, var(--green-d), var(--green)); }
 
 .sticker-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
@@ -1184,6 +1198,7 @@ window.ALBUM_CONFIG = {
       anyVisible = true;
 
       const ss = sectionStats(section);
+      const secPct = ss.total ? Math.round((ss.have / ss.total) * 100) : 0;
       const isOpen = openSections.has(section.id) || !!search || filter !== 'all';
 
       const secEl = document.createElement('div');
@@ -1204,6 +1219,7 @@ window.ALBUM_CONFIG = {
           <div class="meta">${section.kind === 'team' ? 'Grupo ' + section.group + (section.page ? ' · pág. ' + section.page : '') : section.title}</div>
         </div>
         <div class="section-mini ${ss.have === ss.total ? 'done' : ''}">${ss.have}/${ss.total}</div>
+        <div class="sec-progress ${ss.have === ss.total ? 'done' : ''}" aria-hidden="true"><i style="width:${secPct}%"></i></div>
       `;
       head.addEventListener('click', () => {
         if (openSections.has(section.id)) openSections.delete(section.id);
@@ -1259,7 +1275,14 @@ window.ALBUM_CONFIG = {
       if (miniEl && section) {
         const ss = sectionStats(section);
         miniEl.textContent = `${ss.have}/${ss.total}`;
-        miniEl.classList.toggle('done', ss.have === ss.total);
+        const done = ss.have === ss.total;
+        miniEl.classList.toggle('done', done);
+        const bar = miniEl.parentElement && miniEl.parentElement.querySelector('.sec-progress');
+        if (bar) {
+          bar.classList.toggle('done', done);
+          const fill = bar.querySelector('i');
+          if (fill) fill.style.width = (ss.total ? Math.round((ss.have / ss.total) * 100) : 0) + '%';
+        }
       }
       // si hay filtro activo y deja de calzar, re-render para ocultarla
       if (filter !== 'all' && !matchesFilter(s)) renderSections();

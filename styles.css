@@ -201,6 +201,22 @@ body.scrolled:not(.search-open) .toolbar .search {
 }
 .fab-friends:active { transform: scale(.93); }
 
+/* ---------- Álbum activo (chip en header) ---------- */
+.album-chip {
+  display: block; width: 100%; margin: 8px 0 0; padding: 7px 12px;
+  background: linear-gradient(90deg, var(--green), var(--green-d));
+  color: #fff; border: none; border-radius: 999px;
+  font-weight: 800; font-size: .8rem; cursor: pointer; text-align: center;
+}
+
+/* ---------- Mis álbumes (drawer) ---------- */
+.album-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.album-pick { flex: 1; min-width: 0; text-align: left; background: transparent; border: none; color: var(--text); cursor: pointer; padding: 2px 0; }
+.album-name { font-weight: 800; font-size: .92rem; }
+.album-row.active .album-name { color: var(--green); }
+.album-sub { font-size: .74rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.album-actions { display: flex; gap: 4px; flex: none; }
+
 /* ---------- Amigos ---------- */
 #inviteWhatsapp {
   display: block; width: 100%; margin: 8px 0 6px; padding: 11px 14px;

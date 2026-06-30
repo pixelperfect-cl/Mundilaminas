@@ -12,6 +12,7 @@
   const LS_API = 'wc26-api';
   const LS_GID = 'wc26-gid';
   const LS_ALBUM = 'wc26-current-album';   // álbum activo recordado entre recargas
+  const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
 
   // Configuración de la nube. Estos valores por defecto se rellenan una vez
   // (al desplegar): URL de la API en Cloudways y Client ID de Google.
@@ -67,9 +68,11 @@
     });
   }
   function stickerBySid(sid) { return album.stickers.find((s) => s.sid === sid) || null; }
+  // SIEMPRE personal (no usar getCount: en modo compartido devolvería el POOL
+  // y el PUT /me/collection corrompería la colección personal del usuario).
   function countsBySid() {
     const out = {};
-    album.stickers.forEach((s) => { const c = getCount(s.key); if (c > 0 && s.sid) out[s.sid] = c; });
+    album.stickers.forEach((s) => { const c = counts[s.key] || 0; if (c > 0 && s.sid) out[s.sid] = c; });
     return out;
   }
 
@@ -454,10 +457,12 @@
 
   async function flushDirty() {
     if (!loggedIn() || !cloudConfigured() || dirty.size === 0) return;
+    const sending = [...dirty];
     const all = countsBySid(), payload = {};
-    dirty.forEach((sid) => { payload[sid] = all[sid] || 0; });
-    try { await api('/me/collection', { method: 'PUT', body: { counts: payload } }); dirty.clear(); saveJSON(LS_DIRTY, []); }
-    catch (e) { /* se reintenta al próximo cambio o recarga */ }
+    sending.forEach((sid) => { payload[sid] = all[sid] || 0; });
+    dirty.clear(); saveJSON(LS_DIRTY, []);            // vaciar ANTES del await
+    try { await api('/me/collection', { method: 'PUT', body: { counts: payload } }); }
+    catch (e) { sending.forEach((sid) => dirty.add(sid)); saveJSON(LS_DIRTY, [...dirty]); }  // re-encolar
   }
 
   function setSession(token, user) { authToken = token; me = user; localStorage.setItem(LS_TOKEN, token); saveJSON(LS_USER, user); updateCloudUI(); }
@@ -470,10 +475,22 @@
     googleReady = true;
   }
   // Espera a que cargue el script de Google (async) y ejecuta cb. ~5s de margen.
-  function whenGoogleReady(cb, tries = 50) {
+  function whenGoogleReady(cb, tries = 120) {
     if (window.google && google.accounts && google.accounts.id) { cb(); return; }
-    if (tries <= 0) return;
+    if (tries <= 0) { onGoogleLoadFailed(cb); return; }
     setTimeout(() => whenGoogleReady(cb, tries - 1), 100);
+  }
+  // Si el script de Google nunca carga, no dejar el gate atascado: ofrecer reintento.
+  function onGoogleLoadFailed(cb) {
+    const loading = el('gateLoading');
+    if (!loading) return;
+    loading.hidden = false;
+    loading.innerHTML = 'No se pudo cargar el inicio de sesión de Google. Revisa tu conexión e <button id="gateRetry" class="mini-btn">intenta de nuevo</button>.';
+    const rb = el('gateRetry');
+    if (rb) rb.addEventListener('click', () => {
+      loading.textContent = 'Cargando inicio de sesión…';
+      whenGoogleReady(cb || (() => { initGoogle(); updateGate(); }));
+    });
   }
   function renderGoogleButton(containerId, width) {
     const cont = el(containerId);
@@ -517,6 +534,15 @@
     try {
       const data = await api('/me');
       if (data.user) { me = data.user; saveJSON(LS_USER, me); }
+      // Evita mezclar colecciones de cuentas distintas en el mismo dispositivo:
+      // si la colección local era de otro usuario, se descarta antes de combinar.
+      const ownerTag = String((me && (me.id || me.handle)) || '');
+      const prevTag = localStorage.getItem(LS_COUNTS_OWNER);
+      if (prevTag && ownerTag && prevTag !== ownerTag) {
+        counts = {}; saveJSON(LS_COUNTS, counts);
+        dirty = new Set(); saveJSON(LS_DIRTY, []);
+      }
+      if (ownerTag) localStorage.setItem(LS_COUNTS_OWNER, ownerTag);
       await loadMyAlbums();
       const owned = myOwnedAlbum();
       const remembered = loadJSON(LS_ALBUM, null);
@@ -728,6 +754,8 @@
   }
 
   async function switchAlbum(target) {
+    clearTimeout(flushTimer); flushTimer = null;   // cancela flush personal agendado
+    await flushDirty();                            // persiste lo personal pendiente (no-op si compartido)
     await flushSharedDeltas();                     // no perder lo pendiente del anterior
     stopAlbumPolling();
     if (target && target.type === 'shared') {
@@ -783,7 +811,7 @@
       : 'data-kind="personal"';
     return `<div class="album-row${o.active ? ' active' : ''}">
         <button class="album-pick" ${data}>
-          <div class="album-name">${o.title}${o.active ? ' ✓' : ''}</div>
+          <div class="album-name">${escapeHtml(o.title)}${o.active ? ' ✓' : ''}</div>
           <div class="album-sub">${escapeHtml(o.sub)}</div>
         </button>${actions ? '<div class="album-actions">' + actions + '</div>' : ''}
       </div>`;

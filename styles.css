@@ -15,6 +15,7 @@
   --accent: #6c5ce7;
   --radius: 14px;
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -32,7 +33,7 @@ body {
 .app-header {
   position: sticky; top: 0; z-index: 30;
   background: linear-gradient(135deg, #6c5ce7 0%, #4d8dff 55%, #21c17a 100%);
-  padding: 14px 16px 12px;
+  padding: calc(14px + var(--safe-t)) 16px 12px;
   box-shadow: 0 6px 20px rgba(0,0,0,.35);
   transition: padding .18s ease;
 }
@@ -68,7 +69,7 @@ body.search-open .search-btn,
 }
 
 /* Header compactado al hacer scroll (sticky, mantiene barra de progreso + datos) */
-body.scrolled .app-header { padding: 7px 16px 8px; }
+body.scrolled .app-header { padding: calc(7px + var(--safe-t)) 16px 8px; }
 body.scrolled .app-header h1 { font-size: .95rem; }
 body.scrolled .app-header .sub { opacity: 0; max-height: 0; margin-top: 0; }
 body.scrolled .progress-wrap { margin-top: 7px; }
@@ -94,7 +95,7 @@ body.scrolled .progress-bar { height: 8px; }
 .search {
   width: 100%; padding: 11px 14px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--card); color: var(--text);
-  font-size: .95rem; outline: none;
+  font-size: 16px; outline: none;   /* 16px: evita el auto-zoom de iOS al enfocar */
 }
 .search::placeholder { color: var(--muted); }
 /* El buscador se colapsa a la lupa del header cuando se scrollea (salvo que el usuario lo abra). */
@@ -192,14 +193,22 @@ body.scrolled:not(.search-open) .toolbar .search {
 .btn-menu { background: var(--card-2); border: 1px solid var(--line) !important; }
 
 /* FAB flotante de Amigos (sobre la barra inferior) */
-.fab-friends {
-  position: fixed; right: 16px; bottom: calc(80px + var(--safe-b)); z-index: 45;
-  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
-  background: var(--accent); color: #fff; font-size: 1.5rem; line-height: 1;
-  box-shadow: 0 8px 22px rgba(108,92,231,.5);
-  display: grid; place-items: center; transition: transform .12s ease;
+/* Pestaña lateral de Amigos: rectángulo vertical pegado al borde derecho, centrado. */
+.side-tab-friends {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 45;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  width: 36px; padding: 15px 0; border: none; cursor: pointer;
+  background: var(--accent); color: #fff;
+  border-radius: 14px 0 0 14px;
+  box-shadow: -5px 4px 18px rgba(108,92,231,.45);
+  transition: transform .12s ease, width .12s ease;
 }
-.fab-friends:active { transform: scale(.93); }
+.side-tab-friends:active { transform: translateY(-50%) scale(.95); }
+.side-tab-friends .st-icon { font-size: 1.3rem; line-height: 1; }
+.side-tab-friends .st-label {
+  writing-mode: vertical-rl; text-orientation: mixed;
+  font-size: .72rem; font-weight: 800; letter-spacing: .05em;
+}
 
 /* ---------- Álbum activo (chip en header) ---------- */
 .album-chip {

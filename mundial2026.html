@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#6c5ce7" />
   <title>Mundial 2026 · Mis Láminas</title>
   <link rel="manifest" href="manifest.webmanifest" />
@@ -27,6 +27,7 @@
   --accent: #6c5ce7;
   --radius: 14px;
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -44,7 +45,7 @@ body {
 .app-header {
   position: sticky; top: 0; z-index: 30;
   background: linear-gradient(135deg, #6c5ce7 0%, #4d8dff 55%, #21c17a 100%);
-  padding: 14px 16px 12px;
+  padding: calc(14px + var(--safe-t)) 16px 12px;
   box-shadow: 0 6px 20px rgba(0,0,0,.35);
   transition: padding .18s ease;
 }
@@ -80,7 +81,7 @@ body.search-open .search-btn,
 }
 
 /* Header compactado al hacer scroll (sticky, mantiene barra de progreso + datos) */
-body.scrolled .app-header { padding: 7px 16px 8px; }
+body.scrolled .app-header { padding: calc(7px + var(--safe-t)) 16px 8px; }
 body.scrolled .app-header h1 { font-size: .95rem; }
 body.scrolled .app-header .sub { opacity: 0; max-height: 0; margin-top: 0; }
 body.scrolled .progress-wrap { margin-top: 7px; }
@@ -106,7 +107,7 @@ body.scrolled .progress-bar { height: 8px; }
 .search {
   width: 100%; padding: 11px 14px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--card); color: var(--text);
-  font-size: .95rem; outline: none;
+  font-size: 16px; outline: none;   /* 16px: evita el auto-zoom de iOS al enfocar */
 }
 .search::placeholder { color: var(--muted); }
 /* El buscador se colapsa a la lupa del header cuando se scrollea (salvo que el usuario lo abra). */
@@ -204,14 +205,22 @@ body.scrolled:not(.search-open) .toolbar .search {
 .btn-menu { background: var(--card-2); border: 1px solid var(--line) !important; }
 
 /* FAB flotante de Amigos (sobre la barra inferior) */
-.fab-friends {
-  position: fixed; right: 16px; bottom: calc(80px + var(--safe-b)); z-index: 45;
-  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
-  background: var(--accent); color: #fff; font-size: 1.5rem; line-height: 1;
-  box-shadow: 0 8px 22px rgba(108,92,231,.5);
-  display: grid; place-items: center; transition: transform .12s ease;
+/* Pestaña lateral de Amigos: rectángulo vertical pegado al borde derecho, centrado. */
+.side-tab-friends {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 45;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  width: 36px; padding: 15px 0; border: none; cursor: pointer;
+  background: var(--accent); color: #fff;
+  border-radius: 14px 0 0 14px;
+  box-shadow: -5px 4px 18px rgba(108,92,231,.45);
+  transition: transform .12s ease, width .12s ease;
 }
-.fab-friends:active { transform: scale(.93); }
+.side-tab-friends:active { transform: translateY(-50%) scale(.95); }
+.side-tab-friends .st-icon { font-size: 1.3rem; line-height: 1; }
+.side-tab-friends .st-label {
+  writing-mode: vertical-rl; text-orientation: mixed;
+  font-size: .72rem; font-weight: 800; letter-spacing: .05em;
+}
 
 /* ---------- Álbum activo (chip en header) ---------- */
 .album-chip {
@@ -456,8 +465,10 @@ body.gated { overflow: hidden; }
     <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
   </nav>
 
-  <!-- FAB: Amigos (abre el panel lateral) -->
-  <button class="fab-friends" id="btnFriends" aria-label="Amigos">👥</button>
+  <!-- Pestaña lateral: Amigos (abre el panel lateral) -->
+  <button class="side-tab-friends" id="btnFriends" aria-label="Amigos">
+    <span class="st-icon">👥</span><span class="st-label">Amigos</span>
+  </button>
 
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
@@ -848,6 +859,7 @@ window.ALBUM_CONFIG = {
   const LS_API = 'wc26-api';
   const LS_GID = 'wc26-gid';
   const LS_ALBUM = 'wc26-current-album';   // álbum activo recordado entre recargas
+  const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
 
   // Configuración de la nube. Estos valores por defecto se rellenan una vez
   // (al desplegar): URL de la API en Cloudways y Client ID de Google.
@@ -903,9 +915,11 @@ window.ALBUM_CONFIG = {
     });
   }
   function stickerBySid(sid) { return album.stickers.find((s) => s.sid === sid) || null; }
+  // SIEMPRE personal (no usar getCount: en modo compartido devolvería el POOL
+  // y el PUT /me/collection corrompería la colección personal del usuario).
   function countsBySid() {
     const out = {};
-    album.stickers.forEach((s) => { const c = getCount(s.key); if (c > 0 && s.sid) out[s.sid] = c; });
+    album.stickers.forEach((s) => { const c = counts[s.key] || 0; if (c > 0 && s.sid) out[s.sid] = c; });
     return out;
   }
 
@@ -1290,10 +1304,12 @@ window.ALBUM_CONFIG = {
 
   async function flushDirty() {
     if (!loggedIn() || !cloudConfigured() || dirty.size === 0) return;
+    const sending = [...dirty];
     const all = countsBySid(), payload = {};
-    dirty.forEach((sid) => { payload[sid] = all[sid] || 0; });
-    try { await api('/me/collection', { method: 'PUT', body: { counts: payload } }); dirty.clear(); saveJSON(LS_DIRTY, []); }
-    catch (e) { /* se reintenta al próximo cambio o recarga */ }
+    sending.forEach((sid) => { payload[sid] = all[sid] || 0; });
+    dirty.clear(); saveJSON(LS_DIRTY, []);            // vaciar ANTES del await
+    try { await api('/me/collection', { method: 'PUT', body: { counts: payload } }); }
+    catch (e) { sending.forEach((sid) => dirty.add(sid)); saveJSON(LS_DIRTY, [...dirty]); }  // re-encolar
   }
 
   function setSession(token, user) { authToken = token; me = user; localStorage.setItem(LS_TOKEN, token); saveJSON(LS_USER, user); updateCloudUI(); }
@@ -1306,10 +1322,22 @@ window.ALBUM_CONFIG = {
     googleReady = true;
   }
   // Espera a que cargue el script de Google (async) y ejecuta cb. ~5s de margen.
-  function whenGoogleReady(cb, tries = 50) {
+  function whenGoogleReady(cb, tries = 120) {
     if (window.google && google.accounts && google.accounts.id) { cb(); return; }
-    if (tries <= 0) return;
+    if (tries <= 0) { onGoogleLoadFailed(cb); return; }
     setTimeout(() => whenGoogleReady(cb, tries - 1), 100);
+  }
+  // Si el script de Google nunca carga, no dejar el gate atascado: ofrecer reintento.
+  function onGoogleLoadFailed(cb) {
+    const loading = el('gateLoading');
+    if (!loading) return;
+    loading.hidden = false;
+    loading.innerHTML = 'No se pudo cargar el inicio de sesión de Google. Revisa tu conexión e <button id="gateRetry" class="mini-btn">intenta de nuevo</button>.';
+    const rb = el('gateRetry');
+    if (rb) rb.addEventListener('click', () => {
+      loading.textContent = 'Cargando inicio de sesión…';
+      whenGoogleReady(cb || (() => { initGoogle(); updateGate(); }));
+    });
   }
   function renderGoogleButton(containerId, width) {
     const cont = el(containerId);
@@ -1353,6 +1381,15 @@ window.ALBUM_CONFIG = {
     try {
       const data = await api('/me');
       if (data.user) { me = data.user; saveJSON(LS_USER, me); }
+      // Evita mezclar colecciones de cuentas distintas en el mismo dispositivo:
+      // si la colección local era de otro usuario, se descarta antes de combinar.
+      const ownerTag = String((me && (me.id || me.handle)) || '');
+      const prevTag = localStorage.getItem(LS_COUNTS_OWNER);
+      if (prevTag && ownerTag && prevTag !== ownerTag) {
+        counts = {}; saveJSON(LS_COUNTS, counts);
+        dirty = new Set(); saveJSON(LS_DIRTY, []);
+      }
+      if (ownerTag) localStorage.setItem(LS_COUNTS_OWNER, ownerTag);
       await loadMyAlbums();
       const owned = myOwnedAlbum();
       const remembered = loadJSON(LS_ALBUM, null);
@@ -1564,6 +1601,8 @@ window.ALBUM_CONFIG = {
   }
 
   async function switchAlbum(target) {
+    clearTimeout(flushTimer); flushTimer = null;   // cancela flush personal agendado
+    await flushDirty();                            // persiste lo personal pendiente (no-op si compartido)
     await flushSharedDeltas();                     // no perder lo pendiente del anterior
     stopAlbumPolling();
     if (target && target.type === 'shared') {
@@ -1619,7 +1658,7 @@ window.ALBUM_CONFIG = {
       : 'data-kind="personal"';
     return `<div class="album-row${o.active ? ' active' : ''}">
         <button class="album-pick" ${data}>
-          <div class="album-name">${o.title}${o.active ? ' ✓' : ''}</div>
+          <div class="album-name">${escapeHtml(o.title)}${o.active ? ' ✓' : ''}</div>
           <div class="album-sub">${escapeHtml(o.sub)}</div>
         </button>${actions ? '<div class="album-actions">' + actions + '</div>' : ''}
       </div>`;

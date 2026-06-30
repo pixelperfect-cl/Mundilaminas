@@ -443,35 +443,87 @@ button.dash-card:active { transform: scale(.992); }
 }
 .push-toggle.on { background: rgba(33,193,122,.18); border-color: var(--green); }
 
-/* ---------- Gate de inicio (login obligatorio) ---------- */
+/* ---------- Landing + gate de inicio (login obligatorio) ---------- */
 body.gated { overflow: hidden; }
 .login-gate {
-  position: fixed; inset: 0; z-index: 100;
-  display: grid; place-items: center; padding: 24px;
-  padding-bottom: calc(24px + var(--safe-b));
+  position: fixed; inset: 0; z-index: 100; overflow-y: auto;
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(108,92,231,.45), transparent 60%),
+    radial-gradient(1200px 620px at 50% -8%, rgba(108,92,231,.35), transparent 60%),
     linear-gradient(160deg, var(--bg-soft), var(--bg));
-  overflow-y: auto;
 }
 .login-gate[hidden] { display: none; }
-.gate-card {
-  width: 100%; max-width: 420px; text-align: center;
-  background: rgba(32,38,74,.72); border: 1px solid var(--line);
-  border-radius: 20px; padding: 34px 26px 28px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.5);
-  backdrop-filter: blur(6px);
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.gate-logo { font-size: 3.2rem; line-height: 1; margin-bottom: 8px; }
-.gate-card h1 {
-  margin: 0 0 12px; font-size: 1.5rem; font-weight: 800; letter-spacing: .2px; line-height: 1.15;
+.landing {
+  width: 100%; max-width: 560px; margin: 0 auto;
+  padding: calc(34px + var(--safe-t)) calc(22px + var(--safe-r)) calc(40px + var(--safe-b)) calc(22px + var(--safe-l));
+  display: flex; flex-direction: column; gap: 30px;
 }
-.gate-pitch { margin: 0 auto 22px; color: var(--muted); font-size: .92rem; max-width: 320px; }
+
+/* Hero */
+.lp-hero { text-align: center; }
+.lp-logo {
+  font-size: 3rem; line-height: 1; width: 84px; height: 84px; margin: 0 auto 14px;
+  display: grid; place-items: center; border-radius: 24px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 12px 30px var(--accent-glow);
+}
+.lp-brand { margin: 0; font-size: clamp(1.7rem, 8.5vw, 2.2rem); font-weight: 800; letter-spacing: -.02em; }
+.lp-sub { margin: 3px 0 0; color: #bcc3e6; font-weight: 700; font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; }
+.lp-tagline { margin: 16px auto 0; max-width: 420px; font-size: 1.08rem; line-height: 1.45; color: var(--text); }
+.lp-tagline b { color: var(--green); }
+.lp-badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 18px 0 0; }
+.lp-badge { font-size: .76rem; font-weight: 700; padding: 6px 12px; border-radius: var(--r-pill); background: var(--card); border: 1px solid var(--line); color: var(--text); }
+.lp-cta { margin-top: 24px; }
+.lp-cta-lead { margin: 0 0 12px; font-size: 1.02rem; font-weight: 800; color: var(--text); }
+.lp-cta-trust { margin: 12px auto 0; max-width: 400px; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+
+/* hooks del gate (compartidos con la app) */
 .gate-btn { display: flex; justify-content: center; min-height: 44px; }
 .gate-loading { color: var(--muted); font-size: .82rem; margin: 10px 0 0; }
 .gate-note {
-  margin: 18px auto 0; max-width: 340px; font-size: .82rem; color: var(--text);
+  margin: 14px auto 0; max-width: 380px; font-size: .82rem; color: var(--text);
   background: rgba(108,92,231,.16); border: 1px solid var(--accent);
   border-radius: 12px; padding: 10px 13px; line-height: 1.4;
 }
-.gate-foot { margin: 22px auto 0; max-width: 320px; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+
+/* Features */
+.lp-feats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lp-feat {
+  background: var(--card); border: 1px solid var(--hair); border-radius: var(--r-lg);
+  padding: 16px 14px; box-shadow: var(--sh-1);
+}
+.lp-feat-i { font-size: 1.7rem; line-height: 1; }
+.lp-feat h3 { margin: 10px 0 5px; font-size: .96rem; font-weight: 800; }
+.lp-feat p { margin: 0; font-size: .82rem; color: var(--muted); line-height: 1.45; }
+
+/* Story */
+.lp-story {
+  background: radial-gradient(120% 120% at 0% 0%, var(--accent-soft), transparent 55%), var(--card);
+  border: 1px solid var(--hair); border-radius: var(--r-lg); padding: 22px 20px; box-shadow: var(--sh-1);
+}
+.lp-story h2 { margin: 0 0 12px; font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; }
+.lp-story p { margin: 0 0 12px; font-size: .92rem; line-height: 1.6; color: var(--text); }
+.lp-story p:last-child { margin-bottom: 0; }
+.lp-firma { color: var(--muted); font-weight: 700; font-style: italic; }
+
+/* Footer */
+.lp-foot { text-align: center; }
+.lp-cta-up {
+  display: inline-block; margin: 0 0 16px; padding: 13px 28px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+  border-radius: var(--r-pill); font-weight: 800; font-size: 1rem; box-shadow: 0 8px 22px var(--accent-glow);
+}
+.lp-cta-up:active { transform: scale(.96); }
+.lp-foot p { margin: 6px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+.lp-foot a { display: inline-block; padding: 6px 4px; color: var(--accent-2); font-weight: 700; }
+@media (max-width: 360px) { .lp-feats { grid-template-columns: 1fr; } }
+
+/* About modal */
+.about-story p { margin: 0 0 10px; font-size: .88rem; line-height: 1.55; color: var(--text); }
+.about-story .lp-firma { margin-top: 2px; }
+.about-log { margin: 6px 0 0; padding-left: 18px; }
+.about-log li { font-size: .85rem; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+.about-log a, .about-story a { color: var(--accent-2); font-weight: 700; }

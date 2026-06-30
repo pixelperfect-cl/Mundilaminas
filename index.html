@@ -4,24 +4,81 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#6c5ce7" />
-  <title>Mundial 2026 · Mis Láminas</title>
+  <title>Mundiláminas · Completa tu álbum del Mundial 2026 intercambiando con amigos</title>
+  <meta name="description" content="Mundiláminas: app gratis y sin publicidad para coleccionar e intercambiar las láminas del Mundial 2026. Marca las que tienes, las que te faltan y tus repetidas, y crúzalas con tus amigos." />
+  <link rel="canonical" href="https://mundilaminas.cl/" />
+
+  <!-- Open Graph / Twitter (preview al compartir el link por WhatsApp/redes) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Mundiláminas" />
+  <meta property="og:title" content="Mundiláminas · Tu álbum del Mundial 2026, gratis y sin publicidad" />
+  <meta property="og:description" content="Colecciona e intercambia las láminas del Mundial 2026 con tus amigos. Marca tus faltantes y repetidas y cruza colecciones. 100% gratis y sin un solo aviso." />
+  <meta property="og:url" content="https://mundilaminas.cl/" />
+  <meta property="og:image" content="https://mundilaminas.cl/icon-512.png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:locale" content="es_CL" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Mundiláminas · Tu álbum del Mundial 2026, gratis y sin publicidad" />
+  <meta name="twitter:description" content="Colecciona e intercambia las láminas del Mundial 2026 con tus amigos. 100% gratis y sin publicidad." />
+  <meta name="twitter:image" content="https://mundilaminas.cl/icon-512.png" />
+
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Mundiláminas" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Gate de inicio: login obligatorio con Google -->
+  <!-- Landing + gate de inicio (login obligatorio con Google) -->
   <div class="login-gate" id="loginGate" hidden>
-    <div class="gate-card">
-      <div class="gate-logo">⚽</div>
-      <h1>Mundial 2026<br />Mis Láminas</h1>
-      <p class="gate-pitch">Lleva tu álbum Panini, intercambia con amigos y recibe avisos cuando alguien tenga las láminas que te faltan.</p>
-      <div class="gate-btn" id="gateBtn"></div>
-      <p class="gate-loading" id="gateLoading">Cargando inicio de sesión…</p>
-      <p class="gate-note" id="gateLocalNote" hidden>📦 Tienes una colección guardada en este dispositivo. Inicia sesión para guardarla en tu cuenta y no perderla.</p>
-      <p class="gate-foot">Usamos tu cuenta de Google solo para identificarte y sincronizar tu álbum entre dispositivos.</p>
+    <div class="landing">
+
+      <section class="lp-hero">
+        <div class="lp-logo" aria-hidden="true">⚽</div>
+        <h1 class="lp-brand">Mundiláminas</h1>
+        <p class="lp-sub">Álbum del Mundial 2026</p>
+        <p class="lp-tagline">Completa tu álbum del Mundial intercambiando con amigos. <b>Gratis</b> y sin una sola publicidad.</p>
+        <div class="lp-badges">
+          <span class="lp-badge">✅ 100% gratis</span>
+          <span class="lp-badge">🚫 Sin publicidad</span>
+          <span class="lp-badge">❤️ Sin fines comerciales</span>
+        </div>
+        <div class="lp-cta">
+          <p class="lp-cta-lead">Crea tu álbum gratis en un toque</p>
+          <div class="gate-btn" id="gateBtn"></div>
+          <p class="gate-loading" id="gateLoading">Cargando inicio de sesión…</p>
+          <p class="gate-note" id="gateLocalNote" hidden>📦 Tienes una colección guardada en este dispositivo. Inicia sesión para guardarla en tu cuenta y no perderla.</p>
+          <p class="lp-cta-trust">Gratis para siempre · Sin tarjeta · Tu correo solo te identifica.</p>
+        </div>
+      </section>
+
+      <section class="lp-feats">
+        <h2 class="sr-only">Qué puedes hacer con Mundiláminas</h2>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">📋</div><h3>Tu álbum, ordenado</h3><p>Marca lo que tienes, lo que te falta y tus repetidas, y arma el mensaje listo para pegar en WhatsApp.</p></article>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">🤝</div><h3>El cruce que importa</h3><p>Te dice exactamente qué láminas te puede pasar cada amigo y cuáles le pasas tú.</p></article>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">🔔</div><h3>Avisos cuando calza</h3><p>Te avisamos —en la app y al teléfono— cuando un amigo tiene justo las que te faltan.</p></article>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">☁️</div><h3>Tu álbum te sigue</h3><p>Inicia con Google y tu colección se guarda y sincroniza en todos tus dispositivos.</p></article>
+      </section>
+
+      <section class="lp-story">
+        <h2>Por qué existe Mundiláminas</h2>
+        <p>Un domingo cualquiera, en casa de la abuela, mi hijo de 6 años y yo abrimos su álbum del Mundial. Tenía repetidas y le faltaban un montón. Se me ocurrió preguntar en el chat del condominio si había otros niños con láminas para intercambiar.</p>
+        <p>Para mi sorpresa, llegaron varios mensajes: vecinos compartiendo sus listas de repetidas y de las que les faltaban. En uno venía el link de una app que armaba ese mensaje. «Genial», pensé, y la instalé.</p>
+        <p>No alcancé a cargar dos láminas cuando saltó el primer popup de publicidad. Y otro. Y otro. Era un asco. La desinstalé al toque.</p>
+        <p>Así que me propuse hacer una yo mismo: que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
+        <p class="lp-firma">— Emilio</p>
+      </section>
+
+      <footer class="lp-foot">
+        <button class="lp-cta-up" id="lpStart">⚽ Empezar gratis</button>
+        <p>Hecho por un papá para su hijo —y para todos los que están llenando el álbum—. Sin fines comerciales.</p>
+        <p>¿Ideas o problemas? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
+      </footer>
+
     </div>
   </div>
 
@@ -71,7 +128,7 @@
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>📋 Mis listas</h2>
       <div class="tab-row">
         <button id="tabMissing" class="active">🟥 Me faltan</button>
@@ -89,7 +146,7 @@
   <!-- Modal: Menú -->
   <div class="modal-back" id="modalMenu">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>⚙️ Menú</h2>
 
       <div class="stat-row">
@@ -123,6 +180,11 @@
         <button class="act-import" id="actResetTeams">↺ Restaurar equipos</button>
       </div>
 
+      <h2 style="font-size:1rem;margin-top:18px">ℹ️ Acerca de</h2>
+      <div class="modal-actions">
+        <button class="act-import" id="btnAbout">⚽ Historia y novedades</button>
+      </div>
+
       <h2 style="font-size:1rem;margin-top:18px">⚠️ Zona peligrosa</h2>
       <div class="modal-actions">
         <button class="act-danger" id="actResetAll">🗑️ Borrar todo</button>
@@ -133,7 +195,7 @@
   <!-- Drawer: Amigos / Social -->
   <div class="modal-back drawer" id="modalFriends">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>👥 Amigos</h2>
       <div id="friendsGate"><p class="hint">Inicia sesión con Google (en ⚙️ Menú → Cuenta) para usar amigos y sincronizar tu colección.</p></div>
 
@@ -158,7 +220,7 @@
   <!-- Modal: Coincidencias con un amigo -->
   <div class="modal-back" id="modalMatch">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2 id="matchTitle">Coincidencias</h2>
       <div class="list-output" id="matchOutput"></div>
       <div class="modal-actions">
@@ -171,11 +233,40 @@
   <!-- Modal: Notificaciones -->
   <div class="modal-back" id="modalNotifs">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>🔔 Notificaciones</h2>
       <p class="hint">Te avisamos cuando un amigo que vigilas (🔔 en 👥 Amigos) tiene láminas que te faltan. El cruce es de tus repetidas y faltantes con las de él.</p>
       <button class="push-toggle" id="btnPush" style="display:none">📱 Activar avisos al teléfono</button>
       <div id="notifsBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Acerca de Mundiláminas -->
+  <div class="modal-back" id="modalAbout">
+    <div class="modal">
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
+      <h2>⚽ Acerca de Mundiláminas</h2>
+      <p class="hint">Mundial 2026 · Mis Láminas — gratis, sin publicidad y sin fines comerciales.</p>
+
+      <h2 style="font-size:1rem;margin-top:14px">La historia</h2>
+      <div class="about-story">
+        <p>Un domingo cualquiera, en casa de la abuela, mi hijo de 6 años y yo abrimos su álbum del Mundial. Tenía repetidas y le faltaban un montón. Se me ocurrió preguntar en el chat del condominio si había otros niños con láminas para intercambiar.</p>
+        <p>Para mi sorpresa, llegaron varios mensajes: vecinos compartiendo sus listas de repetidas y de las que les faltaban. En uno venía el link de una app que armaba ese mensaje. «Genial», pensé, y la instalé.</p>
+        <p>No alcancé a cargar dos láminas cuando saltó el primer popup de publicidad. Y otro. Y otro. Era un asco. La desinstalé al toque.</p>
+        <p>Así que me propuse hacer una yo mismo: que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
+        <p class="lp-firma">— Emilio</p>
+      </div>
+
+      <h2 style="font-size:1rem;margin-top:18px">✨ Novedades</h2>
+      <ul class="about-log">
+        <li>Listas para compartir más ordenadas: agrupadas por grupo y con rangos (#1-20).</li>
+        <li>Avisos al teléfono (push) cuando un amigo tiene justo lo que te falta.</li>
+        <li>Invita amigos por WhatsApp o por su correo.</li>
+        <li>Tu colección se guarda en tu cuenta de Google y se sincroniza entre tus dispositivos.</li>
+      </ul>
+
+      <h2 style="font-size:1rem;margin-top:18px">Contacto</h2>
+      <p class="hint">¿Ideas, problemas o solo saludar? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
     </div>
   </div>
 

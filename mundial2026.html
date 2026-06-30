@@ -4,11 +4,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#6c5ce7" />
-  <title>Mundial 2026 · Mis Láminas</title>
+  <title>Mundiláminas · Completa tu álbum del Mundial 2026 intercambiando con amigos</title>
+  <meta name="description" content="Mundiláminas: app gratis y sin publicidad para coleccionar e intercambiar las láminas del Mundial 2026. Marca las que tienes, las que te faltan y tus repetidas, y crúzalas con tus amigos." />
+  <link rel="canonical" href="https://mundilaminas.cl/" />
+
+  <!-- Open Graph / Twitter (preview al compartir el link por WhatsApp/redes) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Mundiláminas" />
+  <meta property="og:title" content="Mundiláminas · Tu álbum del Mundial 2026, gratis y sin publicidad" />
+  <meta property="og:description" content="Colecciona e intercambia las láminas del Mundial 2026 con tus amigos. Marca tus faltantes y repetidas y cruza colecciones. 100% gratis y sin un solo aviso." />
+  <meta property="og:url" content="https://mundilaminas.cl/" />
+  <meta property="og:image" content="https://mundilaminas.cl/icon-512.png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:locale" content="es_CL" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Mundiláminas · Tu álbum del Mundial 2026, gratis y sin publicidad" />
+  <meta name="twitter:description" content="Colecciona e intercambia las láminas del Mundial 2026 con tus amigos. 100% gratis y sin publicidad." />
+  <meta name="twitter:image" content="https://mundilaminas.cl/icon-512.png" />
+
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Mundiláminas" />
   <style>
 /* Mundial 2026 · Mis Láminas — estilos mobile-first */
 :root {
@@ -455,52 +476,140 @@ button.dash-card:active { transform: scale(.992); }
 }
 .push-toggle.on { background: rgba(33,193,122,.18); border-color: var(--green); }
 
-/* ---------- Gate de inicio (login obligatorio) ---------- */
+/* ---------- Landing + gate de inicio (login obligatorio) ---------- */
 body.gated { overflow: hidden; }
 .login-gate {
-  position: fixed; inset: 0; z-index: 100;
-  display: grid; place-items: center; padding: 24px;
-  padding-bottom: calc(24px + var(--safe-b));
+  position: fixed; inset: 0; z-index: 100; overflow-y: auto;
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(108,92,231,.45), transparent 60%),
+    radial-gradient(1200px 620px at 50% -8%, rgba(108,92,231,.35), transparent 60%),
     linear-gradient(160deg, var(--bg-soft), var(--bg));
-  overflow-y: auto;
 }
 .login-gate[hidden] { display: none; }
-.gate-card {
-  width: 100%; max-width: 420px; text-align: center;
-  background: rgba(32,38,74,.72); border: 1px solid var(--line);
-  border-radius: 20px; padding: 34px 26px 28px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.5);
-  backdrop-filter: blur(6px);
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.gate-logo { font-size: 3.2rem; line-height: 1; margin-bottom: 8px; }
-.gate-card h1 {
-  margin: 0 0 12px; font-size: 1.5rem; font-weight: 800; letter-spacing: .2px; line-height: 1.15;
+.landing {
+  width: 100%; max-width: 560px; margin: 0 auto;
+  padding: calc(34px + var(--safe-t)) calc(22px + var(--safe-r)) calc(40px + var(--safe-b)) calc(22px + var(--safe-l));
+  display: flex; flex-direction: column; gap: 30px;
 }
-.gate-pitch { margin: 0 auto 22px; color: var(--muted); font-size: .92rem; max-width: 320px; }
+
+/* Hero */
+.lp-hero { text-align: center; }
+.lp-logo {
+  font-size: 3rem; line-height: 1; width: 84px; height: 84px; margin: 0 auto 14px;
+  display: grid; place-items: center; border-radius: 24px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 12px 30px var(--accent-glow);
+}
+.lp-brand { margin: 0; font-size: clamp(1.7rem, 8.5vw, 2.2rem); font-weight: 800; letter-spacing: -.02em; }
+.lp-sub { margin: 3px 0 0; color: #bcc3e6; font-weight: 700; font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; }
+.lp-tagline { margin: 16px auto 0; max-width: 420px; font-size: 1.08rem; line-height: 1.45; color: var(--text); }
+.lp-tagline b { color: var(--green); }
+.lp-badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 18px 0 0; }
+.lp-badge { font-size: .76rem; font-weight: 700; padding: 6px 12px; border-radius: var(--r-pill); background: var(--card); border: 1px solid var(--line); color: var(--text); }
+.lp-cta { margin-top: 24px; }
+.lp-cta-lead { margin: 0 0 12px; font-size: 1.02rem; font-weight: 800; color: var(--text); }
+.lp-cta-trust { margin: 12px auto 0; max-width: 400px; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+
+/* hooks del gate (compartidos con la app) */
 .gate-btn { display: flex; justify-content: center; min-height: 44px; }
 .gate-loading { color: var(--muted); font-size: .82rem; margin: 10px 0 0; }
 .gate-note {
-  margin: 18px auto 0; max-width: 340px; font-size: .82rem; color: var(--text);
+  margin: 14px auto 0; max-width: 380px; font-size: .82rem; color: var(--text);
   background: rgba(108,92,231,.16); border: 1px solid var(--accent);
   border-radius: 12px; padding: 10px 13px; line-height: 1.4;
 }
-.gate-foot { margin: 22px auto 0; max-width: 320px; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+
+/* Features */
+.lp-feats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lp-feat {
+  background: var(--card); border: 1px solid var(--hair); border-radius: var(--r-lg);
+  padding: 16px 14px; box-shadow: var(--sh-1);
+}
+.lp-feat-i { font-size: 1.7rem; line-height: 1; }
+.lp-feat h3 { margin: 10px 0 5px; font-size: .96rem; font-weight: 800; }
+.lp-feat p { margin: 0; font-size: .82rem; color: var(--muted); line-height: 1.45; }
+
+/* Story */
+.lp-story {
+  background: radial-gradient(120% 120% at 0% 0%, var(--accent-soft), transparent 55%), var(--card);
+  border: 1px solid var(--hair); border-radius: var(--r-lg); padding: 22px 20px; box-shadow: var(--sh-1);
+}
+.lp-story h2 { margin: 0 0 12px; font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; }
+.lp-story p { margin: 0 0 12px; font-size: .92rem; line-height: 1.6; color: var(--text); }
+.lp-story p:last-child { margin-bottom: 0; }
+.lp-firma { color: var(--muted); font-weight: 700; font-style: italic; }
+
+/* Footer */
+.lp-foot { text-align: center; }
+.lp-cta-up {
+  display: inline-block; margin: 0 0 16px; padding: 13px 28px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+  border-radius: var(--r-pill); font-weight: 800; font-size: 1rem; box-shadow: 0 8px 22px var(--accent-glow);
+}
+.lp-cta-up:active { transform: scale(.96); }
+.lp-foot p { margin: 6px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+.lp-foot a { display: inline-block; padding: 6px 4px; color: var(--accent-2); font-weight: 700; }
+@media (max-width: 360px) { .lp-feats { grid-template-columns: 1fr; } }
+
+/* About modal */
+.about-story p { margin: 0 0 10px; font-size: .88rem; line-height: 1.55; color: var(--text); }
+.about-story .lp-firma { margin-top: 2px; }
+.about-log { margin: 6px 0 0; padding-left: 18px; }
+.about-log li { font-size: .85rem; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+.about-log a, .about-story a { color: var(--accent-2); font-weight: 700; }
 
 </style>
 </head>
 <body>
-  <!-- Gate de inicio: login obligatorio con Google -->
+  <!-- Landing + gate de inicio (login obligatorio con Google) -->
   <div class="login-gate" id="loginGate" hidden>
-    <div class="gate-card">
-      <div class="gate-logo">⚽</div>
-      <h1>Mundial 2026<br />Mis Láminas</h1>
-      <p class="gate-pitch">Lleva tu álbum Panini, intercambia con amigos y recibe avisos cuando alguien tenga las láminas que te faltan.</p>
-      <div class="gate-btn" id="gateBtn"></div>
-      <p class="gate-loading" id="gateLoading">Cargando inicio de sesión…</p>
-      <p class="gate-note" id="gateLocalNote" hidden>📦 Tienes una colección guardada en este dispositivo. Inicia sesión para guardarla en tu cuenta y no perderla.</p>
-      <p class="gate-foot">Usamos tu cuenta de Google solo para identificarte y sincronizar tu álbum entre dispositivos.</p>
+    <div class="landing">
+
+      <section class="lp-hero">
+        <div class="lp-logo" aria-hidden="true">⚽</div>
+        <h1 class="lp-brand">Mundiláminas</h1>
+        <p class="lp-sub">Álbum del Mundial 2026</p>
+        <p class="lp-tagline">Completa tu álbum del Mundial intercambiando con amigos. <b>Gratis</b> y sin una sola publicidad.</p>
+        <div class="lp-badges">
+          <span class="lp-badge">✅ 100% gratis</span>
+          <span class="lp-badge">🚫 Sin publicidad</span>
+          <span class="lp-badge">❤️ Sin fines comerciales</span>
+        </div>
+        <div class="lp-cta">
+          <p class="lp-cta-lead">Crea tu álbum gratis en un toque</p>
+          <div class="gate-btn" id="gateBtn"></div>
+          <p class="gate-loading" id="gateLoading">Cargando inicio de sesión…</p>
+          <p class="gate-note" id="gateLocalNote" hidden>📦 Tienes una colección guardada en este dispositivo. Inicia sesión para guardarla en tu cuenta y no perderla.</p>
+          <p class="lp-cta-trust">Gratis para siempre · Sin tarjeta · Tu correo solo te identifica.</p>
+        </div>
+      </section>
+
+      <section class="lp-feats">
+        <h2 class="sr-only">Qué puedes hacer con Mundiláminas</h2>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">📋</div><h3>Tu álbum, ordenado</h3><p>Marca lo que tienes, lo que te falta y tus repetidas, y arma el mensaje listo para pegar en WhatsApp.</p></article>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">🤝</div><h3>El cruce que importa</h3><p>Te dice exactamente qué láminas te puede pasar cada amigo y cuáles le pasas tú.</p></article>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">🔔</div><h3>Avisos cuando calza</h3><p>Te avisamos —en la app y al teléfono— cuando un amigo tiene justo las que te faltan.</p></article>
+        <article class="lp-feat"><div class="lp-feat-i" aria-hidden="true">☁️</div><h3>Tu álbum te sigue</h3><p>Inicia con Google y tu colección se guarda y sincroniza en todos tus dispositivos.</p></article>
+      </section>
+
+      <section class="lp-story">
+        <h2>Por qué existe Mundiláminas</h2>
+        <p>Un domingo cualquiera, en casa de la abuela, mi hijo de 6 años y yo abrimos su álbum del Mundial. Tenía repetidas y le faltaban un montón. Se me ocurrió preguntar en el chat del condominio si había otros niños con láminas para intercambiar.</p>
+        <p>Para mi sorpresa, llegaron varios mensajes: vecinos compartiendo sus listas de repetidas y de las que les faltaban. En uno venía el link de una app que armaba ese mensaje. «Genial», pensé, y la instalé.</p>
+        <p>No alcancé a cargar dos láminas cuando saltó el primer popup de publicidad. Y otro. Y otro. Era un asco. La desinstalé al toque.</p>
+        <p>Así que me propuse hacer una yo mismo: que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
+        <p class="lp-firma">— Emilio</p>
+      </section>
+
+      <footer class="lp-foot">
+        <button class="lp-cta-up" id="lpStart">⚽ Empezar gratis</button>
+        <p>Hecho por un papá para su hijo —y para todos los que están llenando el álbum—. Sin fines comerciales.</p>
+        <p>¿Ideas o problemas? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
+      </footer>
+
     </div>
   </div>
 
@@ -550,7 +659,7 @@ body.gated { overflow: hidden; }
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>📋 Mis listas</h2>
       <div class="tab-row">
         <button id="tabMissing" class="active">🟥 Me faltan</button>
@@ -568,7 +677,7 @@ body.gated { overflow: hidden; }
   <!-- Modal: Menú -->
   <div class="modal-back" id="modalMenu">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>⚙️ Menú</h2>
 
       <div class="stat-row">
@@ -602,6 +711,11 @@ body.gated { overflow: hidden; }
         <button class="act-import" id="actResetTeams">↺ Restaurar equipos</button>
       </div>
 
+      <h2 style="font-size:1rem;margin-top:18px">ℹ️ Acerca de</h2>
+      <div class="modal-actions">
+        <button class="act-import" id="btnAbout">⚽ Historia y novedades</button>
+      </div>
+
       <h2 style="font-size:1rem;margin-top:18px">⚠️ Zona peligrosa</h2>
       <div class="modal-actions">
         <button class="act-danger" id="actResetAll">🗑️ Borrar todo</button>
@@ -612,7 +726,7 @@ body.gated { overflow: hidden; }
   <!-- Drawer: Amigos / Social -->
   <div class="modal-back drawer" id="modalFriends">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>👥 Amigos</h2>
       <div id="friendsGate"><p class="hint">Inicia sesión con Google (en ⚙️ Menú → Cuenta) para usar amigos y sincronizar tu colección.</p></div>
 
@@ -637,7 +751,7 @@ body.gated { overflow: hidden; }
   <!-- Modal: Coincidencias con un amigo -->
   <div class="modal-back" id="modalMatch">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2 id="matchTitle">Coincidencias</h2>
       <div class="list-output" id="matchOutput"></div>
       <div class="modal-actions">
@@ -650,11 +764,40 @@ body.gated { overflow: hidden; }
   <!-- Modal: Notificaciones -->
   <div class="modal-back" id="modalNotifs">
     <div class="modal">
-      <button class="close-x" data-close>✕</button>
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>🔔 Notificaciones</h2>
       <p class="hint">Te avisamos cuando un amigo que vigilas (🔔 en 👥 Amigos) tiene láminas que te faltan. El cruce es de tus repetidas y faltantes con las de él.</p>
       <button class="push-toggle" id="btnPush" style="display:none">📱 Activar avisos al teléfono</button>
       <div id="notifsBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Acerca de Mundiláminas -->
+  <div class="modal-back" id="modalAbout">
+    <div class="modal">
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
+      <h2>⚽ Acerca de Mundiláminas</h2>
+      <p class="hint">Mundial 2026 · Mis Láminas — gratis, sin publicidad y sin fines comerciales.</p>
+
+      <h2 style="font-size:1rem;margin-top:14px">La historia</h2>
+      <div class="about-story">
+        <p>Un domingo cualquiera, en casa de la abuela, mi hijo de 6 años y yo abrimos su álbum del Mundial. Tenía repetidas y le faltaban un montón. Se me ocurrió preguntar en el chat del condominio si había otros niños con láminas para intercambiar.</p>
+        <p>Para mi sorpresa, llegaron varios mensajes: vecinos compartiendo sus listas de repetidas y de las que les faltaban. En uno venía el link de una app que armaba ese mensaje. «Genial», pensé, y la instalé.</p>
+        <p>No alcancé a cargar dos láminas cuando saltó el primer popup de publicidad. Y otro. Y otro. Era un asco. La desinstalé al toque.</p>
+        <p>Así que me propuse hacer una yo mismo: que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
+        <p class="lp-firma">— Emilio</p>
+      </div>
+
+      <h2 style="font-size:1rem;margin-top:18px">✨ Novedades</h2>
+      <ul class="about-log">
+        <li>Listas para compartir más ordenadas: agrupadas por grupo y con rangos (#1-20).</li>
+        <li>Avisos al teléfono (push) cuando un amigo tiene justo lo que te falta.</li>
+        <li>Invita amigos por WhatsApp o por su correo.</li>
+        <li>Tu colección se guarda en tu cuenta de Google y se sincroniza entre tus dispositivos.</li>
+      </ul>
+
+      <h2 style="font-size:1rem;margin-top:18px">Contacto</h2>
+      <p class="hint">¿Ideas, problemas o solo saludar? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
     </div>
   </div>
 
@@ -1258,6 +1401,11 @@ window.ALBUM_CONFIG = {
     renderTeamEditor();
     updateCloudUI();
     el('modalMenu').classList.add('open');
+  }
+
+  function openAbout() {
+    closeModals();
+    el('modalAbout').classList.add('open');
   }
 
   function renderTeamEditor() {
@@ -1977,6 +2125,8 @@ window.ALBUM_CONFIG = {
       });
     });
     el('btnMenu').addEventListener('click', openMenu);
+    { const ab = el('btnAbout'); if (ab) ab.addEventListener('click', openAbout); }
+    { const lp = el('lpStart'); if (lp) lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); }
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
     document.querySelectorAll('.modal-back').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModals(); }));
 

@@ -333,6 +333,11 @@
     el('modalMenu').classList.add('open');
   }
 
+  function openAbout() {
+    closeModals();
+    el('modalAbout').classList.add('open');
+  }
+
   function renderTeamEditor() {
     const wrap = el('teamEditor');
     wrap.innerHTML = '';
@@ -1050,6 +1055,8 @@
       });
     });
     el('btnMenu').addEventListener('click', openMenu);
+    { const ab = el('btnAbout'); if (ab) ab.addEventListener('click', openAbout); }
+    { const lp = el('lpStart'); if (lp) lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); }
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
     document.querySelectorAll('.modal-back').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModals(); }));
 

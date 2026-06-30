@@ -8,7 +8,7 @@
  *   POST /auth/google            → { id_token } → { token, user }
  *   GET  /me                     → perfil + colección { counts }
  *   PUT  /me/collection          → { counts: { sid: qty } }  (delta)
- *   POST /friends/request        → { handle }
+ *   POST /friends/request        → { handle } o { email }
  *   POST /friends/accept         → { handle }
  *   GET  /friends                → amigos (con nº de coincidencias) + solicitudes
  *   GET  /friends/matches?with=  → listas de intercambio con un amigo
@@ -106,18 +106,25 @@ if ($method === 'PUT' && $path === 'me/collection') {
   json_out(['ok' => true, 'saved' => count($counts)]);
 }
 
-// ---------- Solicitar amistad ----------
+// ---------- Solicitar amistad (por código @handle o por correo) ----------
 if ($method === 'POST' && $path === 'friends/request') {
   $me = require_user();
   $in = body_json();
-  $handle = trim($in['handle'] ?? '');
-  if ($handle === '') fail('Falta el handle del amigo');
+  $handle = ltrim(trim($in['handle'] ?? ''), '@');
+  $email  = trim($in['email'] ?? '');
+  if ($handle === '' && $email === '') fail('Falta el código o correo del amigo');
 
   $pdo = db();
-  $t = $pdo->prepare('SELECT id, handle, name, avatar_url FROM users WHERE handle = ?');
-  $t->execute([$handle]);
+  if ($email !== '') {
+    // Búsqueda por correo (collation por defecto = case-insensitive, usa idx_email).
+    $t = $pdo->prepare('SELECT id, handle, name, avatar_url FROM users WHERE email = ? LIMIT 1');
+    $t->execute([$email]);
+  } else {
+    $t = $pdo->prepare('SELECT id, handle, name, avatar_url FROM users WHERE handle = ?');
+    $t->execute([$handle]);
+  }
   $target = $t->fetch();
-  if (!$target) fail('No existe un usuario con ese código', 404);
+  if (!$target) fail('No existe un usuario con ese código o correo', 404);
   if ((int)$target['id'] === (int)$me['uid']) fail('No puedes agregarte a ti mismo');
 
   // ¿El otro ya me había solicitado? → aceptar automáticamente.

@@ -504,6 +504,7 @@
       updateCloudUI();
       loadNotifications();      // refresca campanita con la colección ya subida
       startNotifPolling();
+      processPendingInvite();   // si llegó por un link ?add=<handle>, lo agrega
     } catch (e) { /* offline: seguimos en modo local */ }
   }
 
@@ -549,10 +550,13 @@
     } catch (e) { wrap.innerHTML = '<p class="hint">No se pudo cargar (¿API configurada y desplegada?).</p>'; }
   }
   async function addFriend() {
-    const h = (el('friendCode').value || '').trim().replace(/^@/, '');
-    if (!h) return;
+    const raw = (el('friendCode').value || '').trim();
+    if (!raw) return;
+    // Detecta correo (algo@algo.algo); si no, lo trata como código @handle.
+    const isEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw);
+    const body = isEmail ? { email: raw } : { handle: raw.replace(/^@/, '') };
     try {
-      const r = await api('/friends/request', { method: 'POST', body: { handle: h } });
+      const r = await api('/friends/request', { method: 'POST', body });
       toast(r.status === 'accepted' ? '¡Ahora son amigos!' : 'Solicitud enviada');
       el('friendCode').value = ''; renderFriends();
     } catch (e) { toast(e.message || 'No se pudo'); }
@@ -560,6 +564,37 @@
   async function acceptFriend(h) {
     try { await api('/friends/accept', { method: 'POST', body: { handle: h } }); toast('Amigo aceptado ✓'); renderFriends(); }
     catch (e) { toast(e.message || 'No se pudo'); }
+  }
+  // Invita por WhatsApp con un link que auto-agrega al invitado tras su login.
+  function inviteWhatsApp() {
+    if (!loggedIn()) { toast('Inicia sesión para invitar'); return; }
+    const link = apiBase() + '/?add=' + encodeURIComponent(me.handle);
+    const msg = '¡Te invito a Mis Láminas del Mundial 2026! ⚽📒 Llevamos juntos el álbum y cambiamos repetidas. Entra y te agrego como amigo automáticamente:\n' + link;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  }
+
+  // -- Invitación entrante (?add=<handle>): se procesa tras el login --
+  let pendingAdd = '';
+  function captureInviteParams() {
+    try {
+      const a = (new URLSearchParams(location.search).get('add') || '').trim().replace(/^@/, '');
+      if (a) pendingAdd = a;
+    } catch {}
+  }
+  async function processPendingInvite() {
+    if (!pendingAdd || !loggedIn()) return;
+    const h = pendingAdd; pendingAdd = '';
+    // Limpia ?add= de la URL para no re-disparar en recargas.
+    try {
+      const u = new URL(location.href); u.searchParams.delete('add');
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    } catch {}
+    if (me && h.toLowerCase() === (me.handle || '').toLowerCase()) return;  // soy yo
+    try {
+      const r = await api('/friends/request', { method: 'POST', body: { handle: h } });
+      toast(r.status === 'accepted' ? '¡Ahora son amigos!' : 'Solicitud de amistad enviada ✓');
+      renderFriends();
+    } catch (e) { toast(e.message || 'No se pudo agregar al amigo'); }
   }
   async function viewMatches(h) {
     try {
@@ -804,6 +839,7 @@
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
     on('addFriendBtn', 'click', addFriend);
+    on('inviteWhatsapp', 'click', inviteWhatsApp);
     on('copyCode', 'click', () => copyText(me ? '@' + me.handle : ''));
     on('matchWhatsapp', 'click', () => shareWhatsApp(el('matchOutput').dataset.text || ''));
     on('matchCopy', 'click', () => copyText(el('matchOutput').dataset.text || ''));
@@ -833,6 +869,7 @@
   }
 
   // ---------- Init ----------
+  captureInviteParams();   // lee ?add=<handle> antes del login para procesarlo después
   rebuildSidMaps();
   bind();
   setupStickyHeader();

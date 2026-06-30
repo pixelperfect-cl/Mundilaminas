@@ -202,6 +202,11 @@ body.scrolled:not(.search-open) .toolbar .search {
 .fab-friends:active { transform: scale(.93); }
 
 /* ---------- Amigos ---------- */
+#inviteWhatsapp {
+  display: block; width: 100%; margin: 8px 0 6px; padding: 11px 14px;
+  background: #25d366; color: #fff; border: none; border-radius: 10px;
+  font-weight: 800; font-size: .9rem; cursor: pointer;
+}
 .add-friend { display: flex; gap: 6px; margin: 6px 0 4px; }
 .add-friend .search { flex: 1; }
 .add-friend button { flex: none; min-width: 96px; padding: 0 14px; border-radius: 999px; border: none; color: #fff; font-weight: 800; cursor: pointer; }

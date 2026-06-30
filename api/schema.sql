@@ -13,8 +13,12 @@ CREATE TABLE IF NOT EXISTS users (
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uniq_sub (google_sub),
-  UNIQUE KEY uniq_handle (handle)
+  UNIQUE KEY uniq_handle (handle),
+  KEY idx_email (email)                              -- buscar amigos por correo
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Migración para DBs ya existentes (idempotente vía IF NOT EXISTS desde MySQL 8):
+--   ALTER TABLE users ADD INDEX idx_email (email);
 
 -- Colección de cada usuario. Solo se guardan láminas con qty>=1.
 -- La ausencia de una fila = lámina faltante.

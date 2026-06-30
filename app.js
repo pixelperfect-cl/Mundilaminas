@@ -721,8 +721,7 @@
     const lines = [header + ' (' + sids.length + '):'];
     album.sections.forEach((sec) => {
       const list = bySection[sec.id]; if (!list) return;
-      list.sort((a, b) => a.disp - b.disp);
-      lines.push(sectionLabel(sec) + ': ' + list.map((s) => '#' + s.disp).join(', '));
+      lines.push(sectionLabel(sec) + ': ' + rangeStr(list.map((s) => s.disp)));
     });
     return lines.join('\n');
   }

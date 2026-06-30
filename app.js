@@ -1302,15 +1302,9 @@
 
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
-    // Lupa del header: abre/cierra el buscador cuando el header está compacto.
-    on('btnSearch', 'click', () => {
-      const open = document.body.classList.toggle('search-open');
-      if (open) { const s = el('search'); if (s) setTimeout(() => s.focus(), 0); }
-    });
     on('btnHome', 'click', () => showView('home'));
     on('btnAlbum', 'click', () => showView('album'));
     on('btnFriends', 'click', openFriends);
-    on('albumChip', 'click', openFriends);
     on('btnNotifs', 'click', openNotifs);
     on('btnPush', 'click', togglePush);
     on('btnLogin', 'click', promptGoogle);

@@ -25,16 +25,8 @@
     </div>
   </div>
 
-  <!-- Header con progreso -->
+  <!-- Header: solo barra de progreso + detalles -->
   <header class="app-header">
-    <div class="header-top">
-      <button class="icon-btn search-btn" id="btnSearch" aria-label="Buscar">🔍</button>
-      <div class="header-titles">
-        <h1>⚽ Mundial 2026 · Mis Láminas</h1>
-        <div class="sub">Panini Official Sticker Collection · 980 láminas</div>
-      </div>
-    </div>
-    <button class="album-chip" id="albumChip" hidden></button>
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-label">
@@ -60,14 +52,18 @@
   <!-- Secciones (vista Álbum) -->
   <main id="sections" hidden></main>
 
-  <!-- Navegación inferior (5 pestañas) -->
+  <!-- Navegación inferior (4 pestañas; Amigos va en el botón flotante) -->
   <nav class="bottom-nav" aria-label="Navegación principal">
     <button class="navtab active" id="btnHome" aria-current="page"><span class="nt-i">🏠</span><span class="nt-l">Inicio</span></button>
     <button class="navtab" id="btnAlbum"><span class="nt-i">📒</span><span class="nt-l">Álbum</span></button>
-    <button class="navtab" id="btnFriends"><span class="nt-i">👥</span><span class="nt-l">Amigos</span></button>
     <button class="navtab" id="btnNotifs" aria-label="Avisos"><span class="nt-i">🔔</span><span class="nt-l">Avisos</span><span class="bell-badge" id="notifBadge" hidden>0</span></button>
     <button class="navtab" id="btnMenu"><span class="nt-i">⚙️</span><span class="nt-l">Menú</span></button>
   </nav>
+
+  <!-- Botón flotante de Amigos: pestaña vertical pegada al borde derecho, centrada -->
+  <button class="side-tab-friends" id="btnFriends" aria-label="Amigos">
+    <span class="st-icon">👥</span><span class="st-label">Amigos</span>
+  </button>
 
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">

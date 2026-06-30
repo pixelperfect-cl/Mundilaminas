@@ -58,7 +58,18 @@ body {
   box-shadow: var(--sh-2);
   transition: padding .18s ease;
 }
-.progress-wrap { margin: 0; }
+.header-row { display: flex; align-items: center; gap: 12px; }
+.progress-wrap { margin: 0; flex: 1; min-width: 0; }
+.hdr-avatar {
+  flex: none; width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  background: rgba(255,255,255,.18); color: #fff;
+  border: 1.5px solid rgba(255,255,255,.45);
+  font-weight: 800; font-size: 1rem; line-height: 1;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: width .18s ease, height .18s ease, transform .12s ease;
+}
+.hdr-avatar:active { transform: scale(.92); }
+body.scrolled .hdr-avatar { width: 30px; height: 30px; font-size: .9rem; }
 .progress-bar {
   height: 11px; border-radius: 999px; background: rgba(255,255,255,.22);
   overflow: hidden; transition: height .18s ease;
@@ -161,7 +172,7 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
   border-radius: 999px; padding: 2px 6px; box-shadow: 0 2px 6px rgba(0,0,0,.4);
 }
 
-/* ---------- Navegación inferior (5 pestañas) ---------- */
+/* ---------- Navegación inferior (4 pestañas) ---------- */
 .bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
   display: flex; gap: 2px;
@@ -204,15 +215,19 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
   font-size: .7rem; font-weight: 800; letter-spacing: .04em;
 }
 
-/* ---------- Mis álbumes (drawer) ---------- */
-.album-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.album-pick { flex: 1; min-width: 0; text-align: left; background: transparent; border: none; color: var(--text); cursor: pointer; padding: 2px 0; }
-.album-name { font-weight: 800; font-size: .92rem; }
-.album-row.active .album-name { color: var(--green); }
-.album-sub { font-size: .74rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
-.album-actions { display: flex; gap: 4px; flex: none; }
-
 /* ---------- Amigos ---------- */
+.code-card {
+  background: radial-gradient(120% 140% at 100% 0%, var(--accent-soft), transparent 60%), var(--card);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 12px 14px; margin: 10px 0 10px; box-shadow: var(--sh-1);
+}
+.code-card-lab { font-size: var(--fs-xs); color: var(--muted); font-weight: 600; margin-bottom: 7px; }
+.code-card-row { display: flex; align-items: center; gap: 10px; }
+.code-val { flex: 1; min-width: 0; font-weight: 800; font-size: 1.15rem; color: #fff; letter-spacing: .01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer-sep {
+  font-size: var(--fs-xs); font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+  margin: 16px 0 8px; padding-top: 12px; border-top: 1px solid var(--hair);
+}
 #inviteWhatsapp {
   display: block; width: 100%; margin: 8px 0 6px; padding: 11px 14px;
   background: #25d366; color: #fff; border: none; border-radius: 10px;
@@ -329,6 +344,8 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
 /* ---------- Dashboard / Inicio ---------- */
 #dashboard { padding: 12px 12px 8px; }
 #dashboard[hidden] { display: none; }
+.dash-greet { font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; margin: 2px 2px 12px; }
+.dash-greet-wave { display: inline-block; }
 .dash-hero {
   display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center;
   background:
@@ -377,11 +394,13 @@ button.dash-card:active { transform: scale(.992); }
 .dash-empty { color: var(--muted); font-size: var(--fs-sm); margin-top: 8px; }
 .dash-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
 .dash-action {
-  display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 13px 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 86px; padding: 12px 6px; text-align: center; line-height: 1.15;
   background: var(--card); border: 1px solid var(--hair); border-radius: var(--r-md);
   color: var(--text); font-weight: 700; font-size: var(--fs-xs); cursor: pointer; box-shadow: var(--sh-1);
 }
-.dash-action .da-i { font-size: 1.35rem; line-height: 1; }
+.dash-action:active { transform: scale(.97); }
+.dash-action .da-i { font-size: 1.4rem; line-height: 1; }
 
 /* ---------- Diálogo de confirmación temático ---------- */
 .confirm-card { max-width: 400px; }

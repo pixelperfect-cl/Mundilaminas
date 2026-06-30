@@ -25,14 +25,17 @@
     </div>
   </div>
 
-  <!-- Header: solo barra de progreso + detalles -->
+  <!-- Header: barra de progreso + avatar (acceso a Menú) -->
   <header class="app-header">
-    <div class="progress-wrap">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-label">
-        <span id="progressText">0 / 980 láminas</span>
-        <span id="progressPct">0%</span>
+    <div class="header-row">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label">
+          <span id="progressText">0 / 980 láminas</span>
+          <span id="progressPct">0%</span>
+        </div>
       </div>
+      <button class="hdr-avatar" id="hdrAvatar" aria-label="Tu cuenta y menú" title="Tu cuenta y menú">·</button>
     </div>
   </header>
 
@@ -134,12 +137,18 @@
       <h2>👥 Amigos</h2>
       <div id="friendsGate"><p class="hint">Inicia sesión con Google (en ⚙️ Menú → Cuenta) para usar amigos y sincronizar tu colección.</p></div>
 
-      <p class="hint">Tu código: <b id="myCode">—</b>
-        <button class="mini-btn" id="copyCode">copiar</button>
-      </p>
+      <div class="code-card">
+        <div class="code-card-lab">Tu código — compártelo para que te agreguen</div>
+        <div class="code-card-row">
+          <span class="code-val" id="myCode">—</span>
+          <button class="mini-btn" id="copyCode">📋 Copiar</button>
+        </div>
+      </div>
       <button class="act-whatsapp" id="inviteWhatsapp">🟢 Invitar amigo por WhatsApp</button>
+
+      <div class="drawer-sep">Agregar un amigo</div>
       <div class="add-friend">
-        <input class="search" id="friendCode" placeholder="código @handle o correo del amigo" />
+        <input class="search" id="friendCode" placeholder="código @handle o correo" />
         <button class="act-share" id="addFriendBtn">Agregar</button>
       </div>
       <div id="friendsBody"></div>

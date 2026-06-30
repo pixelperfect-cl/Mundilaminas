@@ -218,36 +218,94 @@
     return `${flag ? flag + ' ' : ''}Grupo ${section.group} · ${section.teamName}${pg}`;
   }
 
-  function buildMissingText() {
-    const lines = ['🟥 ME FALTAN — Mundial 2026', ''];
-    let total = 0;
+  // Comprime números consecutivos en rangos: [1,2,3,5,8,9] -> "#1-3, #5, #8-9".
+  function rangeStr(nums) {
+    const sorted = [...nums].map(Number).filter((n) => !isNaN(n)).sort((a, b) => a - b);
+    const parts = [];
+    let i = 0;
+    while (i < sorted.length) {
+      let j = i;
+      while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
+      parts.push(j > i ? `#${sorted[i]}-${sorted[j]}` : `#${sorted[i]}`);
+      i = j + 1;
+    }
+    return parts.join(', ');
+  }
+
+  // Arma el texto para compartir: título, total, especiales y equipos agrupados
+  // por Grupo, con rangos compactos. collect(section) -> { count, body } | null
+  function buildShareText({ title, totalLine, emptyMsg, collect }) {
+    const groups = [];
+    let curGroup = null, total = 0;
+    const specials = [];
     album.sections.forEach((section) => {
-      const miss = section.stickers.filter((s) => getCount(s.key) === 0);
-      if (!miss.length) return;
-      total += miss.length;
-      const title = sectionLabel(section);
-      lines.push(`${title}: ` + miss.map((s) => '#' + s.disp).join(', '));
+      const r = collect(section);
+      if (!r) return;
+      total += r.count;
+      if (section.kind === 'team') {
+        const flag = CFG.flagFor ? (CFG.flagFor(section.code) || '') : '';
+        const pg = section.page ? ` (pág. ${section.page})` : '';
+        const line = `${flag ? flag + ' ' : ''}${section.teamName}${pg}: ${r.body}`;
+        if (!curGroup || curGroup.group !== section.group) {
+          curGroup = { group: section.group, lines: [] };
+          groups.push(curGroup);
+        }
+        curGroup.lines.push(line);
+      } else {
+        specials.push(`${section.title}: ${r.body}`);
+      }
     });
-    lines.splice(1, 0, `Total: ${total} láminas`);
-    if (total === 0) return '🎉 ¡No te falta ninguna! Álbum completo.';
-    return lines.join('\n');
+    if (total === 0) return emptyMsg;
+    const out = [title, totalLine(total)];
+    if (specials.length) out.push('', '⭐ Especiales', ...specials);
+    groups.forEach((g) => out.push('', `— Grupo ${g.group} —`, ...g.lines));
+    out.push('', '— Mundial 2026 · Mis Láminas');
+    return out.join('\n');
+  }
+
+  function buildMissingText() {
+    return buildShareText({
+      title: '🟥 ME FALTAN · Mundial 2026',
+      totalLine: (t) => `Me faltan ${t} lámina${t !== 1 ? 's' : ''}`,
+      emptyMsg: '🎉 ¡No me falta ninguna! Álbum completo.',
+      collect: (section) => {
+        const miss = section.stickers.filter((s) => getCount(s.key) === 0);
+        if (!miss.length) return null;
+        const body = rangeStr(miss.map((s) => s.disp));
+        const all = miss.length === section.stickers.length;
+        return { count: miss.length, body: all ? `todas (${body})` : body };
+      },
+    });
   }
 
   function buildRepesText() {
-    const lines = ['🔁 REPETIDAS (para cambiar) — Mundial 2026', ''];
-    let total = 0;
-    album.sections.forEach((section) => {
-      const reps = section.stickers
-        .map((s) => ({ s, r: Math.max(0, getCount(s.key) - 1) }))
-        .filter((x) => x.r > 0);
-      if (!reps.length) return;
-      const title = sectionLabel(section);
-      reps.forEach((x) => total += x.r);
-      lines.push(`${title}: ` + reps.map((x) => `#${x.s.disp}${x.r > 1 ? ' (x' + x.r + ')' : ''}`).join(', '));
+    // Comprime repes consecutivas de la misma cantidad: "#5-7" o "#5-7 (x2)".
+    const repeStr = (items) => {
+      const sorted = [...items].sort((a, b) => a.disp - b.disp);
+      const parts = [];
+      let i = 0;
+      while (i < sorted.length) {
+        let j = i;
+        while (j + 1 < sorted.length && sorted[j + 1].disp === sorted[j].disp + 1 && sorted[j + 1].extra === sorted[i].extra) j++;
+        const tag = sorted[i].extra > 1 ? ` (x${sorted[i].extra})` : '';
+        parts.push(j > i ? `#${sorted[i].disp}-${sorted[j].disp}${tag}` : `#${sorted[i].disp}${tag}`);
+        i = j + 1;
+      }
+      return parts.join(', ');
+    };
+    return buildShareText({
+      title: '🔁 REPETIDAS para cambiar · Mundial 2026',
+      totalLine: (t) => `Tengo ${t} repetida${t !== 1 ? 's' : ''} para cambiar`,
+      emptyMsg: 'Aún no tengo repetidas para cambiar.',
+      collect: (section) => {
+        const reps = section.stickers
+          .map((s) => ({ disp: Number(s.disp), extra: Math.max(0, getCount(s.key) - 1) }))
+          .filter((x) => x.extra > 0);
+        if (!reps.length) return null;
+        const count = reps.reduce((a, x) => a + x.extra, 0);
+        return { count, body: repeStr(reps) };
+      },
     });
-    lines.splice(1, 0, `Total repetidas: ${total}`);
-    if (total === 0) return 'No tienes láminas repetidas todavía.';
-    return lines.join('\n');
   }
 
   // ---------- Modales ----------
@@ -840,6 +898,8 @@
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
+    const av = el('hdrAvatar');
+    if (av) av.textContent = loggedIn() ? ((me.name || me.handle || '·').trim().charAt(0).toUpperCase() || '·') : '·';
     updateGate();
   }
   // ===================================================================
@@ -886,7 +946,9 @@
     const unread = (lastNotif && lastNotif.unread) || 0;
     const notifItems = ((lastNotif && lastNotif.items) || []).slice(0, 3);
 
+    const firstName = escapeHtml(((me && (me.name || me.handle)) || '').split(' ')[0] || 'crack');
     let html = '';
+    html += `<div class="dash-greet">¡Hola, ${firstName}! <span class="dash-greet-wave">👋</span></div>`;
     html += `<section class="dash-hero">
         <div class="ring" style="--p:${pct}"><span class="ring-val">${pct}%</span></div>
         <div class="dash-hero-info">
@@ -1008,6 +1070,7 @@
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnHome', 'click', () => showView('home'));
     on('btnAlbum', 'click', () => showView('album'));
+    on('hdrAvatar', 'click', openMenu);
     on('btnFriends', 'click', openFriends);
     on('btnNotifs', 'click', openNotifs);
     on('btnPush', 'click', togglePush);

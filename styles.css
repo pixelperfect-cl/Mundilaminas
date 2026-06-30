@@ -187,21 +187,21 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
 .navtab:active { background: var(--accent-soft); }
 .navtab .bell-badge { top: 2px; right: calc(50% - 22px); }
 
-/* ---------- Botón flotante de Amigos (pestaña vertical pegada a la derecha) ---------- */
+/* ---------- Botón flotante de Amigos (rectángulo flotante, derecha, centrado) ---------- */
 .side-tab-friends {
-  position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 45;
+  position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 48;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-  width: 38px; padding: 15px 0; border: none; cursor: pointer;
+  width: 54px; padding: 16px 0; border: none; cursor: pointer;
   background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
-  border-radius: var(--r-md) 0 0 var(--r-md);
-  box-shadow: -5px 4px 18px var(--accent-glow);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px var(--accent-glow), 0 2px 8px rgba(0,0,0,.5);
   transition: transform .12s ease;
 }
-.side-tab-friends:active { transform: translateY(-50%) scale(.95); }
-.side-tab-friends .st-icon { font-size: 1.3rem; line-height: 1; }
+.side-tab-friends:active { transform: translateY(-50%) scale(.94); }
+.side-tab-friends .st-icon { font-size: 1.5rem; line-height: 1; }
 .side-tab-friends .st-label {
   writing-mode: vertical-rl; text-orientation: mixed;
-  font-size: .72rem; font-weight: 800; letter-spacing: .05em;
+  font-size: .7rem; font-weight: 800; letter-spacing: .04em;
 }
 
 /* ---------- Mis álbumes (drawer) ---------- */

@@ -62,31 +62,9 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_no_friend FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Álbumes compartidos. El pool de láminas ES la `collection` del dueño
--- (user_id = owner_id); no se copia nada. Un dueño tiene un álbum compartido.
-CREATE TABLE IF NOT EXISTS shared_albums (
-  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  owner_id    BIGINT UNSIGNED NOT NULL,                -- dueño = pool (su collection)
-  name        VARCHAR(80) NOT NULL,
-  join_code   VARCHAR(24) NOT NULL,                    -- código para link/invite
-  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uniq_owner (owner_id),
-  UNIQUE KEY uniq_join (join_code),
-  CONSTRAINT fk_sa_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Miembros de cada álbum compartido (incluye al dueño con role='owner').
-CREATE TABLE IF NOT EXISTS shared_album_members (
-  album_id    BIGINT UNSIGNED NOT NULL,
-  user_id     BIGINT UNSIGNED NOT NULL,
-  role        ENUM('owner','member') NOT NULL DEFAULT 'member',
-  joined_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (album_id, user_id),
-  KEY idx_member (user_id),
-  CONSTRAINT fk_sam_album FOREIGN KEY (album_id) REFERENCES shared_albums(id) ON DELETE CASCADE,
-  CONSTRAINT fk_sam_user  FOREIGN KEY (user_id)  REFERENCES users(id)         ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Nota: las tablas `shared_albums` y `shared_album_members` (álbum compartido,
+-- Fase 3) fueron retiradas de la app. Si quedaron creadas en una DB existente,
+-- pueden dejarse vacías o eliminarse manualmente; el código ya no las usa.
 
 -- Suscripciones de Web Push (una por navegador/dispositivo).
 CREATE TABLE IF NOT EXISTS push_subscriptions (

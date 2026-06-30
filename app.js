@@ -11,7 +11,6 @@
   const LS_DIRTY = 'wc26-dirty';
   const LS_API = 'wc26-api';
   const LS_GID = 'wc26-gid';
-  const LS_ALBUM = 'wc26-current-album';   // álbum activo recordado entre recargas
   const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
 
   // Configuración de la nube. Estos valores por defecto se rellenan una vez
@@ -39,19 +38,10 @@
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   function getCount(key) {
-    if (isShared()) return sharedCounts[key] || 0;
     return counts[key] || 0;
   }
   function setCount(key, n) {
     n = Math.max(0, n | 0);
-    if (isShared()) {                       // compartido: edición por delta
-      const prev = sharedCounts[key] || 0;
-      const delta = n - prev;
-      if (delta === 0) return;
-      if (n === 0) delete sharedCounts[key]; else sharedCounts[key] = n;
-      queueSharedDelta(key, delta);
-      return;
-    }
     if (n === 0) delete counts[key]; else counts[key] = n;
     saveJSON(LS_COUNTS, counts);
     markDirty(key);   // para sincronizar con la nube si hay sesión
@@ -68,8 +58,7 @@
     });
   }
   function stickerBySid(sid) { return album.stickers.find((s) => s.sid === sid) || null; }
-  // SIEMPRE personal (no usar getCount: en modo compartido devolvería el POOL
-  // y el PUT /me/collection corrompería la colección personal del usuario).
+  // Mapa { sid: qty } de la colección personal, para sincronizar con la nube.
   function countsBySid() {
     const out = {};
     album.stickers.forEach((s) => { const c = counts[s.key] || 0; if (c > 0 && s.sid) out[s.sid] = c; });
@@ -421,16 +410,6 @@
   let dirty = new Set(loadJSON(LS_DIRTY, []));
   let flushTimer = null, googleReady = false;
 
-  // ---------- Álbum activo (personal vs compartido) ----------
-  // currentAlbum: {type:'personal'} | {type:'shared', id, name, ownerHandle}
-  let currentAlbum = { type: 'personal' };
-  let myAlbums = [];          // cache de GET /albums/mine
-  let sharedCounts = {};      // por KEY (convertido desde sid) del compartido activo
-  let sharedSince = 0;        // ts del último GET para polling incremental
-  let sharedPending = {};     // { sid: deltaAcumulado } pendiente de enviar
-  let sharedFlushTimer = null, albumPollTimer = null;
-  function isShared() { return currentAlbum.type === 'shared'; }
-
   // Vista activa (Inicio/dashboard vs Álbum/grilla) y cache de amigos para el dashboard.
   let currentView = 'home';
   let lastFriends = { friends: [], incoming: [] };
@@ -525,13 +504,8 @@
   function doLogout() {
     clearSession();
     stopNotifPolling();
-    stopAlbumPolling();
-    currentAlbum = { type: 'personal' }; sharedCounts = {}; sharedPending = {}; sharedSince = 0; myAlbums = [];
-    localStorage.removeItem(LS_ALBUM);
     setBadge(0);
-    updateAlbumChip();
     render();
-    renderAlbumsSection();
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
     toast('Sesión cerrada');
   }
@@ -549,41 +523,23 @@
         dirty = new Set(); saveJSON(LS_DIRTY, []);
       }
       if (ownerTag) localStorage.setItem(LS_COUNTS_OWNER, ownerTag);
-      await loadMyAlbums();
-      const owned = myOwnedAlbum();
-      const remembered = loadJSON(LS_ALBUM, null);
-      const remOk = remembered && remembered.type === 'shared' && myAlbums.some((a) => a.id === remembered.id);
-      if (owned) {
-        // Mi álbum ya es compartido: el pool ES mi collection en el server.
-        // NO hago el merge/PUT personal absoluto (clobberearía aportes y filas qty=0).
-        updateCloudUI();
-        await switchAlbum({ type: 'shared', id: owned.id, name: owned.name });
-      } else if (remOk) {
-        // Retomar el álbum compartido en que estaba (miembro).
-        updateCloudUI();
-        const a = myAlbums.find((x) => x.id === remembered.id);
-        await switchAlbum({ type: 'shared', id: a.id, name: a.name, ownerHandle: a.owner_handle });
-      } else {
-        if (remembered) localStorage.removeItem(LS_ALBUM);   // estaba pero ya no soy miembro
-        // Sync personal (modo de siempre): combina LS con el server por máximo.
-        const server = data.counts || {};
-        let changed = false;
-        album.stickers.forEach((s) => {
-          if (!s.sid) return;
-          const local = counts[s.key] || 0, srv = server[s.sid] || 0, mx = Math.max(local, srv);
-          if (mx !== local) { counts[s.key] = mx; changed = true; }
-        });
-        if (changed) saveJSON(LS_COUNTS, counts);
-        dirty = new Set(Object.keys(countsBySid()));   // subir todo lo combinado
-        saveJSON(LS_DIRTY, [...dirty]);
-        await flushDirty();
-        render();
-        updateCloudUI();
-      }
+      // Sync personal: combina la colección local con la del server por máximo.
+      const server = data.counts || {};
+      let changed = false;
+      album.stickers.forEach((s) => {
+        if (!s.sid) return;
+        const local = counts[s.key] || 0, srv = server[s.sid] || 0, mx = Math.max(local, srv);
+        if (mx !== local) { counts[s.key] = mx; changed = true; }
+      });
+      if (changed) saveJSON(LS_COUNTS, counts);
+      dirty = new Set(Object.keys(countsBySid()));   // subir todo lo combinado
+      saveJSON(LS_DIRTY, [...dirty]);
+      await flushDirty();
+      render();
+      updateCloudUI();
       loadNotifications();      // refresca campanita con la colección ya subida
       startNotifPolling();
-      await processPendingInvite();   // ?add=<handle> y/o ?join=<code> (puede cambiar de álbum)
-      renderAlbumsSection();
+      await processPendingInvite();   // ?add=<handle> (invitación de amigo)
       await loadFriendsData();
       if (currentView === 'home') renderDashboard();
     } catch (e) { /* offline: seguimos en modo local */ }
@@ -593,7 +549,7 @@
   function openFriends() {
     el('modalFriends').classList.add('open');
     updateCloudUI();
-    if (loggedIn()) { renderFriends(); loadMyAlbums().then(renderAlbumsSection); }
+    if (loggedIn()) renderFriends();
   }
 
   async function renderFriends() {
@@ -659,13 +615,12 @@
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
   }
 
-  // -- Invitación entrante (?add=<handle> / ?join=<code>): se procesa tras el login --
-  let pendingAdd = '', pendingJoin = '';
+  // -- Invitación entrante (?add=<handle>): se procesa tras el login --
+  let pendingAdd = '';
   function captureInviteParams() {
     try {
       const q = new URLSearchParams(location.search);
       const a = (q.get('add') || '').trim().replace(/^@/, '');   if (a) pendingAdd = a;
-      const j = (q.get('join') || '').trim().toUpperCase();      if (j) pendingJoin = j;
     } catch {}
   }
   function cleanUrlParam(name) {
@@ -686,243 +641,8 @@
         } catch (e) { toast(e.message || 'No se pudo agregar al amigo'); }
       }
     }
-    if (pendingJoin) {
-      const code = pendingJoin; pendingJoin = ''; cleanUrlParam('join');
-      try {
-        const r = await api('/albums/join', { method: 'POST', body: { code } });
-        toast('Te uniste a "' + r.album.name + '" ✓');
-        await loadMyAlbums();
-        await switchAlbum({ type: 'shared', id: r.album.id, name: r.album.name, ownerHandle: r.album.owner_handle });
-      } catch (e) { toast(e.message || 'No se pudo unir al álbum'); }
-    }
   }
 
-  // ===================================================================
-  // ==========   ÁLBUMES COMPARTIDOS (deltas + polling)   =============
-  // ===================================================================
-  function queueSharedDelta(key, delta) {
-    const sid = keyToSid[key];
-    if (!sid) return;
-    sharedPending[sid] = (sharedPending[sid] || 0) + delta;
-    clearTimeout(sharedFlushTimer);
-    sharedFlushTimer = setTimeout(flushSharedDeltas, 700);
-  }
-  async function flushSharedDeltas() {
-    if (!isShared() || !loggedIn()) return;
-    const id = currentAlbum.id;
-    const ops = Object.keys(sharedPending)
-      .map((sid) => ({ sid, delta: sharedPending[sid] }))
-      .filter((o) => o.delta !== 0);
-    if (!ops.length) return;
-    sharedPending = {};
-    try {
-      const r = await api('/albums/' + id + '/collection', { method: 'POST', body: { ops } });
-      if (r && r.ts) sharedSince = r.ts;
-      if (r && r.counts) applySharedCounts(r.counts, true);
-    } catch (e) {
-      // re-encolar para reintentar al próximo cambio/poll
-      ops.forEach((o) => { sharedPending[o.sid] = (sharedPending[o.sid] || 0) + o.delta; });
-    }
-  }
-  // Aplica un mapa {sid: qty} al estado compartido. No pisa sids con cambios
-  // locales sin enviar (sharedPending). Re-renderiza si algo cambió y rerender=true.
-  function applySharedCounts(countsBySidObj, rerender) {
-    let changed = false;
-    Object.keys(countsBySidObj || {}).forEach((sid) => {
-      if (sharedPending[sid]) return;             // cambio local pendiente: no pisar
-      const key = sidToKey[sid];
-      if (!key) return;
-      const qty = countsBySidObj[sid] | 0;
-      if ((sharedCounts[key] || 0) !== qty) {
-        if (qty === 0) delete sharedCounts[key]; else sharedCounts[key] = qty;
-        changed = true;
-      }
-    });
-    if (changed && rerender) render();
-    return changed;
-  }
-  function startAlbumPolling() {
-    stopAlbumPolling();
-    if (!isShared()) return;
-    albumPollTimer = setInterval(pollSharedAlbum, 12000);
-  }
-  function stopAlbumPolling() {
-    if (albumPollTimer) { clearInterval(albumPollTimer); albumPollTimer = null; }
-  }
-  async function pollSharedAlbum() {
-    if (!isShared() || !loggedIn()) return;
-    try {
-      await flushSharedDeltas();                  // primero envía lo pendiente
-      const id = currentAlbum.id;
-      // margen de 2s de solape: evita perder cambios del mismo segundo (ts en seg).
-      const since = sharedSince > 2 ? sharedSince - 2 : 0;
-      const r = await api('/albums/' + id + '/collection?since=' + since);
-      if (r && r.ts) sharedSince = r.ts;
-      if (r && r.counts) applySharedCounts(r.counts, true);
-    } catch (e) { /* reintenta al próximo tick */ }
-  }
-
-  async function switchAlbum(target) {
-    clearTimeout(flushTimer); flushTimer = null;   // cancela flush personal agendado
-    await flushDirty();                            // persiste lo personal pendiente (no-op si compartido)
-    await flushSharedDeltas();                     // no perder lo pendiente del anterior
-    stopAlbumPolling();
-    if (target && target.type === 'shared') {
-      currentAlbum = { type: 'shared', id: target.id, name: target.name, ownerHandle: target.ownerHandle };
-      sharedCounts = {}; sharedPending = {}; sharedSince = 0;
-      try {
-        const r = await api('/albums/' + target.id + '/collection?since=0');
-        sharedSince = r.ts || 0;
-        applySharedCounts(r.counts || {}, false);
-      } catch (e) { toast('No se pudo cargar el álbum compartido'); }
-      startAlbumPolling();
-    } else {
-      currentAlbum = { type: 'personal' };
-      sharedCounts = {}; sharedPending = {}; sharedSince = 0;
-    }
-    // Recordar la elección entre recargas.
-    if (currentAlbum.type === 'shared') saveJSON(LS_ALBUM, { type: 'shared', id: currentAlbum.id, name: currentAlbum.name, ownerHandle: currentAlbum.ownerHandle });
-    else localStorage.removeItem(LS_ALBUM);
-    updateAlbumChip();
-    try { window.dispatchEvent(new Event('resize')); } catch {}   // re-sincroniza --header-h (el chip cambia la altura)
-    render();
-    renderAlbumsSection();
-  }
-
-  async function loadMyAlbums() {
-    if (!loggedIn()) { myAlbums = []; return; }
-    try { const d = await api('/albums/mine'); myAlbums = d.albums || []; }
-    catch (e) { myAlbums = []; }
-  }
-  function myOwnedAlbum() { return myAlbums.find((a) => a.role === 'owner') || null; }
-
-  function updateAlbumChip() {
-    const chip = el('albumChip');
-    if (!chip) return;
-    if (isShared()) {
-      chip.hidden = false;
-      chip.textContent = '👥 ' + (currentAlbum.name || 'Álbum compartido') + ' · cambiar';
-    } else {
-      chip.hidden = true;
-    }
-  }
-
-  function albumRow(o) {
-    let actions = '';
-    if (o.manage === 'owner') {
-      actions += `<button class="mini-btn alb-invite" data-code="${escapeHtml(o.code || '')}" data-name="${escapeHtml(o.name || '')}">🟢 Invitar</button>`;
-      actions += `<button class="mini-btn alb-delete" data-id="${o.id}" title="Borrar álbum">🗑️</button>`;
-    } else if (o.manage === 'member') {
-      actions += `<button class="mini-btn alb-leave" data-id="${o.id}" data-name="${escapeHtml(o.name || '')}">Salir</button>`;
-    }
-    const data = o.kind === 'shared'
-      ? `data-kind="shared" data-id="${o.id}" data-name="${escapeHtml(o.name || '')}" data-owner="${escapeHtml(o.ownerHandle || '')}"`
-      : 'data-kind="personal"';
-    return `<div class="album-row${o.active ? ' active' : ''}">
-        <button class="album-pick" ${data}>
-          <div class="album-name">${escapeHtml(o.title)}${o.active ? ' ✓' : ''}</div>
-          <div class="album-sub">${escapeHtml(o.sub)}</div>
-        </button>${actions ? '<div class="album-actions">' + actions + '</div>' : ''}
-      </div>`;
-  }
-
-  function renderAlbumsSection() {
-    const wrap = el('albumsSection');
-    if (!wrap) return;
-    if (!loggedIn()) { wrap.hidden = true; wrap.innerHTML = ''; return; }
-    wrap.hidden = false;
-    const owned = myOwnedAlbum();
-    const joined = myAlbums.filter((a) => a.role !== 'owner');
-    let html = '<h2 style="font-size:1rem">📚 Mis álbumes</h2>';
-
-    if (owned) {   // mi álbum ya es compartido → no muestro "personal" aparte
-      html += albumRow({
-        title: '📒 ' + owned.name, sub: owned.members + ' miembro(s) · tú eres el dueño',
-        active: isShared() && currentAlbum.id === owned.id,
-        id: owned.id, kind: 'shared', name: owned.name, manage: 'owner', code: owned.join_code,
-      });
-    } else {
-      html += albumRow({ title: '📒 Mi álbum', sub: 'Solo tuyo', active: !isShared(), kind: 'personal' });
-      html += '<button class="act-share" id="btnShareAlbum" style="width:100%;margin:6px 0 4px">➕ Compartir mi álbum</button>';
-    }
-
-    joined.forEach((a) => {
-      html += albumRow({
-        title: '👥 ' + a.name, sub: 'de @' + a.owner_handle + ' · ' + a.members + ' miembro(s)',
-        active: isShared() && currentAlbum.id === a.id,
-        id: a.id, kind: 'shared', name: a.name, ownerHandle: a.owner_handle, manage: 'member',
-      });
-    });
-
-    html += '<div class="add-friend" style="margin-top:8px">'
-      + '<input class="search" id="joinCode" placeholder="código de álbum (ej. A1B2C3)" />'
-      + '<button class="act-share" id="btnJoinAlbum">Unirme</button></div>';
-
-    wrap.innerHTML = html;
-    bindAlbumsSection();
-  }
-
-  function bindAlbumsSection() {
-    const wrap = el('albumsSection');
-    if (!wrap) return;
-    wrap.querySelectorAll('.album-pick').forEach((b) => b.addEventListener('click', () => {
-      if (b.dataset.kind === 'personal') switchAlbum({ type: 'personal' });
-      else switchAlbum({ type: 'shared', id: +b.dataset.id, name: b.dataset.name, ownerHandle: b.dataset.owner });
-    }));
-    const sh = el('btnShareAlbum'); if (sh) sh.addEventListener('click', shareMyAlbum);
-    const jb = el('btnJoinAlbum'); if (jb) jb.addEventListener('click', joinAlbumByCode);
-    wrap.querySelectorAll('.alb-invite').forEach((b) => b.addEventListener('click', () => inviteAlbumWhatsApp(b.dataset.code, b.dataset.name)));
-    wrap.querySelectorAll('.alb-delete').forEach((b) => b.addEventListener('click', () => deleteAlbum(+b.dataset.id)));
-    wrap.querySelectorAll('.alb-leave').forEach((b) => b.addEventListener('click', () => leaveAlbum(+b.dataset.id, b.dataset.name)));
-  }
-
-  async function shareMyAlbum() {
-    if (!loggedIn()) return;
-    await flushDirty();   // asegura que el server tenga mi colección antes de compartir
-    try {
-      const r = await api('/albums/share', { method: 'POST' });
-      toast('¡Álbum compartido! Invita con el botón 🟢.');
-      await loadMyAlbums();
-      await switchAlbum({ type: 'shared', id: r.album.id, name: r.album.name });
-    } catch (e) { toast(e.message || 'No se pudo compartir'); }
-  }
-  async function joinAlbumByCode() {
-    const code = (el('joinCode').value || '').trim().toUpperCase();
-    if (!code) return;
-    try {
-      const r = await api('/albums/join', { method: 'POST', body: { code } });
-      toast('Te uniste a "' + r.album.name + '" ✓');
-      el('joinCode').value = '';
-      await loadMyAlbums();
-      await switchAlbum({ type: 'shared', id: r.album.id, name: r.album.name, ownerHandle: r.album.owner_handle });
-    } catch (e) { toast(e.message || 'No se pudo unir'); }
-  }
-  function inviteAlbumWhatsApp(code, name) {
-    if (!code) { toast('Sin código de álbum'); return; }
-    const link = apiBase() + '/?join=' + encodeURIComponent(code);
-    const msg = '¡Llenemos juntos el álbum "' + (name || 'Mundial 2026') + '"! ⚽📒 Únete con este link y editamos el mismo conteo de láminas:\n' + link + '\n(o usa el código ' + code + ')';
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-  }
-  async function deleteAlbum(id) {
-    if (!(await confirmDialog('¿Borrar este álbum compartido? Los miembros dejarán de verlo. Tu colección no se pierde.', { ok: 'Borrar', danger: true }))) return;
-    try {
-      await api('/albums/' + id + '/delete', { method: 'POST' });
-      toast('Álbum borrado');
-      if (isShared() && currentAlbum.id === id) await switchAlbum({ type: 'personal' });
-      await loadMyAlbums();
-      renderAlbumsSection();
-    } catch (e) { toast(e.message || 'No se pudo'); }
-  }
-  async function leaveAlbum(id, name) {
-    if (!(await confirmDialog('¿Salir de "' + (name || 'este álbum') + '"?', { ok: 'Salir' }))) return;
-    try {
-      await api('/albums/' + id + '/leave', { method: 'POST' });
-      toast('Saliste del álbum');
-      if (isShared() && currentAlbum.id === id) await switchAlbum({ type: 'personal' });
-      await loadMyAlbums();
-      renderAlbumsSection();
-    } catch (e) { toast(e.message || 'No se pudo'); }
-  }
   async function viewMatches(h) {
     try {
       const m = await api('/friends/matches?with=' + encodeURIComponent(h));
@@ -1120,8 +840,6 @@
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
-    const as = el('albumsSection'); if (as && !loggedIn()) { as.hidden = true; as.innerHTML = ''; }
-    updateAlbumChip();
     updateGate();
   }
   // ===================================================================
@@ -1167,11 +885,6 @@
     const matchFriends = (fr.friends || []).filter((f) => f.they_give_me > 0).slice(0, 3);
     const unread = (lastNotif && lastNotif.unread) || 0;
     const notifItems = ((lastNotif && lastNotif.items) || []).slice(0, 3);
-    const a = isShared() ? myAlbums.find((x) => x.id === currentAlbum.id) : null;
-    const albumTitle = isShared() ? (currentAlbum.name || 'Álbum compartido') : 'Mi álbum';
-    const albumSub = isShared()
-      ? (a ? ((a.role === 'owner' ? 'Tú eres el dueño' : 'de @' + a.owner_handle) + ' · ' + a.members + ' miembro(s)') : 'Compartido')
-      : 'Personal';
 
     let html = '';
     html += `<section class="dash-hero">
@@ -1187,14 +900,6 @@
         </div>
         <button class="dash-cta" id="dashGoAlbum">Seguir completando →</button>
       </section>`;
-
-    html += `<button class="dash-card" id="dashAlbumCard">
-        <div class="dash-card-head">
-          <div class="dash-card-title"><span class="em">${isShared() ? '👥' : '📒'}</span>${escapeHtml(albumTitle)}</div>
-          <span class="dash-chevron">›</span>
-        </div>
-        <div class="dash-row-sub">${escapeHtml(albumSub)}</div>
-      </button>`;
 
     html += `<button class="dash-card" id="dashFriendsCard">
         <div class="dash-card-head">
@@ -1233,18 +938,17 @@
     html += `<div class="dash-actions">
         <button class="dash-action" id="dashActLists"><span class="da-i">📋</span>Listas</button>
         <button class="dash-action" id="dashActInvite"><span class="da-i">🟢</span>Invitar</button>
-        <button class="dash-action" id="dashActShare"><span class="da-i">👥</span>Compartir</button>
+        <button class="dash-action" id="dashActPush"><span class="da-i">📱</span>Avisos al teléfono</button>
       </div>`;
 
     wrap.innerHTML = html;
     const w = (id, fn) => { const e = el(id); if (e) e.addEventListener('click', fn); };
     w('dashGoAlbum', () => showView('album'));
-    w('dashAlbumCard', openFriends);
     w('dashFriendsCard', openFriends);
     w('dashNotifsCard', openNotifs);
     w('dashActLists', openLists);
     w('dashActInvite', inviteWhatsApp);
-    w('dashActShare', openFriends);
+    w('dashActPush', togglePush);
   }
 
   // Diálogo de confirmación temático (reemplaza confirm()/alert() nativos).
@@ -1364,10 +1068,9 @@
     if (loggedIn() && cloudConfigured()) syncAfterLogin();
     registerSW().then(refreshPushButton);   // prepara el Service Worker para push
   });
-  // Al volver a la pestaña/app, refresca la campanita y el álbum compartido.
+  // Al volver a la pestaña/app, refresca la campanita.
   window.addEventListener('focus', () => {
     if (!loggedIn()) return;
     loadNotifications();
-    if (isShared()) pollSharedAlbum();
   });
 })();

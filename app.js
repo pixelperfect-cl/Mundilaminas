@@ -99,6 +99,7 @@
   function render() {
     renderProgress();
     renderSections();
+    if (currentView === 'home') renderDashboard();
   }
 
   function renderProgress() {
@@ -315,8 +316,8 @@
     toast('Equipos guardados ✓');
   }
 
-  function resetTeams() {
-    if (!confirm('¿Restaurar los 48 equipos por defecto? (No borra tus láminas marcadas)')) return;
+  async function resetTeams() {
+    if (!(await confirmDialog('¿Restaurar los 48 equipos por defecto? No borra tus láminas marcadas.', { ok: 'Restaurar' }))) return;
     teams = clone(CFG.DEFAULT_TEAMS);
     saveJSON(LS_TEAMS, teams);
     album = CFG.buildAlbum(teams);
@@ -358,21 +359,22 @@
           flushDirty();
         }
       } catch {
-        alert('No se pudo leer el archivo. ¿Es un respaldo válido?');
+        toast('No se pudo leer el archivo. ¿Es un respaldo válido?');
       }
     };
     reader.readAsText(file);
   }
 
-  function resetAll() {
-    if (!confirm('¿Borrar TODO (láminas marcadas y equipos)? Esto no se puede deshacer.')) return;
+  async function resetAll() {
+    if (!(await confirmDialog('¿Borrar las láminas marcadas y los equipos de ESTE dispositivo? Si tienes sesión, tu colección en la nube no se borra desde aquí.', { ok: 'Borrar', danger: true }))) return;
     counts = {}; teams = clone(CFG.DEFAULT_TEAMS); openSections = new Set();
+    dirty = new Set(); saveJSON(LS_DIRTY, []);
     localStorage.removeItem(LS_COUNTS);
     localStorage.removeItem(LS_TEAMS);
     localStorage.removeItem(LS_OPEN);
     album = CFG.buildAlbum(teams);
     rebuildSidMaps();
-    render(); closeModals(); toast('Todo reiniciado');
+    render(); closeModals(); toast('Datos locales borrados');
   }
 
   // ---------- Compartir / copiar ----------
@@ -428,6 +430,10 @@
   let sharedPending = {};     // { sid: deltaAcumulado } pendiente de enviar
   let sharedFlushTimer = null, albumPollTimer = null;
   function isShared() { return currentAlbum.type === 'shared'; }
+
+  // Vista activa (Inicio/dashboard vs Álbum/grilla) y cache de amigos para el dashboard.
+  let currentView = 'home';
+  let lastFriends = { friends: [], incoming: [] };
 
   function apiBase() { return (localStorage.getItem(LS_API) || DEFAULT_API_BASE || '').replace(/\/+$/, ''); }
   function clientId() { return localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || ''; }
@@ -578,6 +584,8 @@
       startNotifPolling();
       await processPendingInvite();   // ?add=<handle> y/o ?join=<code> (puede cambiar de álbum)
       renderAlbumsSection();
+      await loadFriendsData();
+      if (currentView === 'home') renderDashboard();
     } catch (e) { /* offline: seguimos en modo local */ }
   }
 
@@ -595,6 +603,7 @@
     wrap.innerHTML = '<div class="hint">Cargando…</div>';
     try {
       const data = await api('/friends');
+      lastFriends = data || { friends: [], incoming: [] };
       let html = '';
       if (data.incoming && data.incoming.length) {
         html += '<h2 style="font-size:1rem">Solicitudes</h2>';
@@ -895,7 +904,7 @@
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
   }
   async function deleteAlbum(id) {
-    if (!confirm('¿Borrar este álbum compartido? Los miembros dejarán de verlo. Tu colección no se pierde.')) return;
+    if (!(await confirmDialog('¿Borrar este álbum compartido? Los miembros dejarán de verlo. Tu colección no se pierde.', { ok: 'Borrar', danger: true }))) return;
     try {
       await api('/albums/' + id + '/delete', { method: 'POST' });
       toast('Álbum borrado');
@@ -905,7 +914,7 @@
     } catch (e) { toast(e.message || 'No se pudo'); }
   }
   async function leaveAlbum(id, name) {
-    if (!confirm('¿Salir de "' + (name || 'este álbum') + '"?')) return;
+    if (!(await confirmDialog('¿Salir de "' + (name || 'este álbum') + '"?', { ok: 'Salir' }))) return;
     try {
       await api('/albums/' + id + '/leave', { method: 'POST' });
       toast('Saliste del álbum');
@@ -958,6 +967,7 @@
       lastNotif = data || { unread: 0, items: [] };
       setBadge(lastNotif.unread || 0);
       if (el('modalNotifs') && el('modalNotifs').classList.contains('open')) renderNotifs();
+      if (currentView === 'home') renderDashboard();
     } catch (e) { /* silencioso: reintenta al próximo poll */ }
   }
 
@@ -1105,7 +1115,6 @@
     }
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
-    show('btnNotifs', loggedIn());
     if (!loggedIn()) setBadge(0);
     refreshPushButton();
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
@@ -1115,6 +1124,152 @@
     updateAlbumChip();
     updateGate();
   }
+  // ===================================================================
+  // ==========   DASHBOARD / INICIO + navegación de vistas   ==========
+  // ===================================================================
+  function setNavActive(id) {
+    ['btnHome', 'btnAlbum'].forEach((x) => {
+      const b = el(x); if (!b) return;
+      const on = x === id;
+      b.classList.toggle('active', on);
+      if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+  }
+  function showView(view) {
+    currentView = view;
+    const home = view === 'home';
+    const dash = el('dashboard'); if (dash) dash.hidden = !home;
+    const tb = el('toolbar'); if (tb) tb.hidden = home;
+    const sec = el('sections'); if (sec) sec.hidden = home;
+    setNavActive(home ? 'btnHome' : 'btnAlbum');
+    if (home) {
+      renderDashboard();
+      loadFriendsData().then(() => { if (currentView === 'home') renderDashboard(); });
+      window.scrollTo(0, 0);
+    }
+    try { window.dispatchEvent(new Event('resize')); } catch {}   // recalcula --header-h
+  }
+
+  async function loadFriendsData() {
+    if (!loggedIn()) { lastFriends = { friends: [], incoming: [] }; return; }
+    try { lastFriends = (await api('/friends')) || { friends: [], incoming: [] }; }
+    catch (e) { /* mantener cache anterior */ }
+  }
+
+  function renderDashboard() {
+    const wrap = el('dashboard');
+    if (!wrap || currentView !== 'home') return;
+    if (!loggedIn()) { wrap.innerHTML = ''; return; }
+    const st = stats();
+    const pct = st.total ? Math.round((st.have / st.total) * 100) : 0;
+    const fr = lastFriends || { friends: [], incoming: [] };
+    const pending = (fr.incoming || []).length;
+    const matchFriends = (fr.friends || []).filter((f) => f.they_give_me > 0).slice(0, 3);
+    const unread = (lastNotif && lastNotif.unread) || 0;
+    const notifItems = ((lastNotif && lastNotif.items) || []).slice(0, 3);
+    const a = isShared() ? myAlbums.find((x) => x.id === currentAlbum.id) : null;
+    const albumTitle = isShared() ? (currentAlbum.name || 'Álbum compartido') : 'Mi álbum';
+    const albumSub = isShared()
+      ? (a ? ((a.role === 'owner' ? 'Tú eres el dueño' : 'de @' + a.owner_handle) + ' · ' + a.members + ' miembro(s)') : 'Compartido')
+      : 'Personal';
+
+    let html = '';
+    html += `<section class="dash-hero">
+        <div class="ring" style="--p:${pct}"><span class="ring-val">${pct}%</span></div>
+        <div class="dash-hero-info">
+          <div class="dash-count">${st.have} / ${st.total}</div>
+          <div class="dash-sub">láminas en tu álbum</div>
+          <div class="dash-chips">
+            <span class="dash-chip ok">✅ ${st.have}</span>
+            <span class="dash-chip">⬜ ${st.missing}</span>
+            <span class="dash-chip warn">🔁 ${st.repesTotal}</span>
+          </div>
+        </div>
+        <button class="dash-cta" id="dashGoAlbum">Seguir completando →</button>
+      </section>`;
+
+    html += `<button class="dash-card" id="dashAlbumCard">
+        <div class="dash-card-head">
+          <div class="dash-card-title"><span class="em">${isShared() ? '👥' : '📒'}</span>${escapeHtml(albumTitle)}</div>
+          <span class="dash-chevron">›</span>
+        </div>
+        <div class="dash-row-sub">${escapeHtml(albumSub)}</div>
+      </button>`;
+
+    html += `<button class="dash-card" id="dashFriendsCard">
+        <div class="dash-card-head">
+          <div class="dash-card-title"><span class="em">👥</span>Amigos</div>
+          ${pending ? `<span class="dash-pill">${pending} solicitud${pending > 1 ? 'es' : ''}</span>` : '<span class="dash-chevron">›</span>'}
+        </div>`;
+    if (matchFriends.length) {
+      matchFriends.forEach((f) => {
+        html += `<div class="dash-row"><div class="dash-row-main">
+            <div class="dash-row-title">${escapeHtml(f.user.name || f.user.handle)}</div>
+            <div class="dash-row-sub">tiene ${f.they_give_me} que te faltan</div>
+          </div><span class="dash-pill green">${f.they_give_me}</span></div>`;
+      });
+    } else {
+      html += `<div class="dash-empty">${(fr.friends || []).length ? 'Ninguna coincidencia nueva ahora.' : 'Agrega amigos para cambiar láminas.'}</div>`;
+    }
+    html += `</button>`;
+
+    html += `<button class="dash-card" id="dashNotifsCard">
+        <div class="dash-card-head">
+          <div class="dash-card-title"><span class="em">🔔</span>Avisos</div>
+          ${unread ? `<span class="dash-pill">${unread} nuevo${unread > 1 ? 's' : ''}</span>` : '<span class="dash-chevron">›</span>'}
+        </div>`;
+    if (notifItems.length) {
+      notifItems.forEach((n) => {
+        html += `<div class="dash-row"><div class="dash-row-main">
+            <div class="dash-row-title">${escapeHtml(n.friend.name || n.friend.handle)}</div>
+            <div class="dash-row-sub">te puede pasar ${n.they_give}</div>
+          </div>${n.unread ? '<span class="dash-pill">nuevo</span>' : ''}</div>`;
+      });
+    } else {
+      html += `<div class="dash-empty">Sin novedades por ahora.</div>`;
+    }
+    html += `</button>`;
+
+    html += `<div class="dash-actions">
+        <button class="dash-action" id="dashActLists"><span class="da-i">📋</span>Listas</button>
+        <button class="dash-action" id="dashActInvite"><span class="da-i">🟢</span>Invitar</button>
+        <button class="dash-action" id="dashActShare"><span class="da-i">👥</span>Compartir</button>
+      </div>`;
+
+    wrap.innerHTML = html;
+    const w = (id, fn) => { const e = el(id); if (e) e.addEventListener('click', fn); };
+    w('dashGoAlbum', () => showView('album'));
+    w('dashAlbumCard', openFriends);
+    w('dashFriendsCard', openFriends);
+    w('dashNotifsCard', openNotifs);
+    w('dashActLists', openLists);
+    w('dashActInvite', inviteWhatsApp);
+    w('dashActShare', openFriends);
+  }
+
+  // Diálogo de confirmación temático (reemplaza confirm()/alert() nativos).
+  function confirmDialog(message, opts = {}) {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 'modal-back';
+      back.innerHTML = `<div class="modal confirm-card" role="dialog" aria-modal="true">
+          <div class="confirm-msg">${escapeHtml(message)}</div>
+          <div class="confirm-actions">
+            <button class="confirm-cancel" type="button">${escapeHtml(opts.cancel || 'Cancelar')}</button>
+            <button class="confirm-ok ${opts.danger ? 'danger' : ''}" type="button">${escapeHtml(opts.ok || 'Confirmar')}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(back);
+      const close = (val) => { back.classList.remove('open'); setTimeout(() => back.remove(), 250); document.removeEventListener('keydown', onKey); resolve(val); };
+      const onKey = (e) => { if (e.key === 'Escape') close(false); };
+      back.querySelector('.confirm-cancel').addEventListener('click', () => close(false));
+      back.querySelector('.confirm-ok').addEventListener('click', () => close(true));
+      back.addEventListener('click', (e) => { if (e.target === back) close(false); });
+      document.addEventListener('keydown', onKey);
+      requestAnimationFrame(() => { back.classList.add('open'); const ok = back.querySelector('.confirm-ok'); if (ok) ok.focus(); });
+    });
+  }
+
   // ---------- Eventos ----------
   function bind() {
     el('search').addEventListener('input', (e) => {
@@ -1129,7 +1284,6 @@
         renderSections();
       });
     });
-    el('btnLists').addEventListener('click', openLists);
     el('btnMenu').addEventListener('click', openMenu);
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
     document.querySelectorAll('.modal-back').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModals(); }));
@@ -1153,6 +1307,8 @@
       const open = document.body.classList.toggle('search-open');
       if (open) { const s = el('search'); if (s) setTimeout(() => s.focus(), 0); }
     });
+    on('btnHome', 'click', () => showView('home'));
+    on('btnAlbum', 'click', () => showView('album'));
     on('btnFriends', 'click', openFriends);
     on('albumChip', 'click', openFriends);
     on('btnNotifs', 'click', openNotifs);
@@ -1193,9 +1349,17 @@
   captureInviteParams();   // lee ?add=<handle> antes del login para procesarlo después
   rebuildSidMaps();
   bind();
+  // a11y: marca los paneles como diálogos y permite cerrarlos con ESC.
+  document.querySelectorAll('.modal-back > .modal').forEach((m) => {
+    m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.querySelector('.modal-back.open')) closeModals();
+  });
   setupStickyHeader();
   render();
   updateCloudUI();
+  showView('home');   // landing = Inicio (dashboard)
   // El script de Google es async: apenas cargue, inicializa y pinta el botón
   // del gate (login obligatorio). Robusto aunque cargue después del 'load'.
   whenGoogleReady(() => { initGoogle(); updateGate(); });

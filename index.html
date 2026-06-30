@@ -44,30 +44,30 @@
     </div>
   </header>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
+  <!-- Inicio / Dashboard -->
+  <main id="dashboard" hidden></main>
+
+  <!-- Toolbar (vista Álbum) -->
+  <div class="toolbar" id="toolbar" hidden>
     <input class="search" id="search" type="search" placeholder="Buscar por número o equipo… (ej: 25, Brasil)" />
-    <div class="filters">
+    <div class="filters" role="group" aria-label="Filtro de láminas">
       <button data-filter="all" class="active">Todas</button>
       <button data-filter="missing">Me faltan</button>
       <button data-filter="repe">Repetidas</button>
     </div>
   </div>
 
-  <!-- Secciones -->
-  <main id="sections"></main>
+  <!-- Secciones (vista Álbum) -->
+  <main id="sections" hidden></main>
 
-  <!-- Barra inferior -->
-  <nav class="bottom-bar">
-    <button class="btn-lists" id="btnLists">📋 Listas</button>
-    <button class="btn-notifs" id="btnNotifs" aria-label="Avisos" style="display:none">🔔 Avisos<span class="bell-badge" id="notifBadge" hidden>0</span></button>
-    <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
+  <!-- Navegación inferior (5 pestañas) -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <button class="navtab active" id="btnHome" aria-current="page"><span class="nt-i">🏠</span><span class="nt-l">Inicio</span></button>
+    <button class="navtab" id="btnAlbum"><span class="nt-i">📒</span><span class="nt-l">Álbum</span></button>
+    <button class="navtab" id="btnFriends"><span class="nt-i">👥</span><span class="nt-l">Amigos</span></button>
+    <button class="navtab" id="btnNotifs" aria-label="Avisos"><span class="nt-i">🔔</span><span class="nt-l">Avisos</span><span class="bell-badge" id="notifBadge" hidden>0</span></button>
+    <button class="navtab" id="btnMenu"><span class="nt-i">⚙️</span><span class="nt-l">Menú</span></button>
   </nav>
-
-  <!-- Pestaña lateral: Amigos (abre el panel lateral) -->
-  <button class="side-tab-friends" id="btnFriends" aria-label="Amigos">
-    <span class="st-icon">👥</span><span class="st-label">Amigos</span>
-  </button>
 
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
@@ -177,7 +177,7 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="data.js"></script>

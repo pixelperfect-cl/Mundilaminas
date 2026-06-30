@@ -12,22 +12,41 @@
   <style>
 /* Mundial 2026 · Mis Láminas — estilos mobile-first */
 :root {
-  --bg: #0f1226;
-  --bg-soft: #1a1e3a;
-  --card: #20264a;
-  --card-2: #272d57;
+  /* Base casi-negra + rampa de elevación (la separación la dan sombras, no bordes que brillan) */
+  --bg: #0a0d18;
+  --bg-soft: #121733;
+  --card: #1a1f40;
+  --card-2: #232a54;
   --text: #eef1ff;
-  --muted: #9aa3c7;
-  --line: #333a6b;
-  --green: #21c17a;
+  --muted: #99a1c9;
+  --line: #2a3059;            /* borde sólido, más sutil que antes */
+  --hair: rgba(255,255,255,.07);
+  --green: #2bd58a;
   --green-d: #14784c;
   --gold: #f6c945;
   --red: #ff5d73;
   --blue: #4d8dff;
-  --accent: #6c5ce7;
+  --accent: #7b6cf0;
+  --accent-2: #5e7bff;       /* segundo tono para gradientes violeta→azul */
+  --accent-soft: rgba(123,108,240,.16);
+  --accent-glow: rgba(123,108,240,.45);
+  --green-wa: #25d366;       /* solo WhatsApp */
   --radius: 14px;
+  --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+  --sh-1: 0 1px 2px rgba(0,0,0,.35);
+  --sh-2: 0 10px 30px rgba(0,0,0,.45);
+  --fs-xs: .72rem; --fs-sm: .82rem; --fs-md: .92rem; --fs-lg: 1.1rem; --fs-xl: 1.4rem;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+
+/* Foco visible y accesible en todos los controles (no usar solo color) */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+button:focus:not(:focus-visible) { outline: none; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -38,23 +57,27 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.35;
-  padding-bottom: calc(84px + var(--safe-b));
+  padding-bottom: calc(72px + var(--safe-b));
 }
 
 /* ---------- Header ---------- */
 .app-header {
   position: sticky; top: 0; z-index: 30;
-  background: linear-gradient(135deg, #6c5ce7 0%, #4d8dff 55%, #21c17a 100%);
-  padding: calc(14px + var(--safe-t)) 16px 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,.18), transparent 55%),
+    linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  padding: calc(14px + var(--safe-t)) calc(16px + var(--safe-r)) 12px calc(16px + var(--safe-l));
+  box-shadow: var(--sh-2);
   transition: padding .18s ease;
 }
 .app-header h1 {
-  margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: .2px;
+  margin: 0; font-size: 1.32rem; font-weight: 800; letter-spacing: -.01em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35);
   transition: font-size .18s ease;
 }
 .app-header .sub {
-  font-size: .78rem; opacity: .9; margin-top: 2px; max-height: 2em; overflow: hidden;
+  font-size: .78rem; opacity: .92; margin-top: 2px; max-height: 2em; overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0,0,0,.3);
   transition: opacity .15s ease, max-height .18s ease, margin-top .18s ease;
 }
 
@@ -101,9 +124,10 @@ body.scrolled .progress-bar { height: 8px; }
 .toolbar {
   position: sticky; top: var(--header-h, 0px); z-index: 20;
   background: var(--bg-soft);
-  padding: 10px 12px; border-bottom: 1px solid var(--line);
+  padding: 10px 12px; border-bottom: 1px solid var(--hair);
   display: flex; flex-direction: column; gap: 8px;
 }
+.toolbar[hidden], #sections[hidden] { display: none; }   /* el atributo hidden debe ganar a display:flex */
 .search {
   width: 100%; padding: 11px 14px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--card); color: var(--text);
@@ -130,8 +154,8 @@ body.scrolled:not(.search-open) .toolbar .search {
 
 /* ---------- Sections ---------- */
 .section {
-  margin: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius);
-  background: var(--card); overflow: hidden;
+  margin: 10px 12px; border: 1px solid var(--hair); border-radius: var(--r-md);
+  background: var(--card); overflow: hidden; box-shadow: var(--sh-1);
 }
 .section-head {
   display: flex; align-items: center; gap: 10px;
@@ -189,38 +213,31 @@ body.scrolled:not(.search-open) .toolbar .search {
   border-radius: 999px; padding: 2px 6px; box-shadow: 0 2px 6px rgba(0,0,0,.4);
 }
 
-/* ---------- Bottom bar ---------- */
-.bottom-bar {
+/* ---------- Navegación inferior (5 pestañas) ---------- */
+.bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-  display: flex; gap: 8px; padding: 10px 12px calc(10px + var(--safe-b));
-  background: rgba(15,18,38,.92); backdrop-filter: blur(8px);
-  border-top: 1px solid var(--line);
+  display: flex; gap: 2px;
+  padding: 7px calc(6px + var(--safe-r)) calc(7px + var(--safe-b)) calc(6px + var(--safe-l));
+  background: rgba(10,13,24,.86);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--hair);
 }
-.bottom-bar button {
-  flex: 1; padding: 13px 6px; border-radius: 12px; border: none; cursor: pointer;
-  font-weight: 800; font-size: .9rem; color: #fff; position: relative;
+.navtab {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 2px 4px; border: none; background: transparent; cursor: pointer;
+  color: var(--muted); position: relative; border-radius: var(--r-sm);
+  transition: color .15s ease, background .15s ease;
 }
-.btn-lists { background: var(--green); }
-.btn-notifs { background: var(--blue); }
-.btn-menu { background: var(--card-2); border: 1px solid var(--line) !important; }
-
-/* FAB flotante de Amigos (sobre la barra inferior) */
-/* Pestaña lateral de Amigos: rectángulo vertical pegado al borde derecho, centrado. */
-.side-tab-friends {
-  position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 45;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-  width: 36px; padding: 15px 0; border: none; cursor: pointer;
-  background: var(--accent); color: #fff;
-  border-radius: 14px 0 0 14px;
-  box-shadow: -5px 4px 18px rgba(108,92,231,.45);
-  transition: transform .12s ease, width .12s ease;
+.navtab .nt-i { font-size: 1.3rem; line-height: 1; filter: grayscale(.35) opacity(.82); transition: filter .15s ease, transform .12s ease; }
+.navtab .nt-l { font-size: .65rem; font-weight: 700; }
+.navtab.active { color: var(--text); }
+.navtab.active .nt-i { filter: none; transform: translateY(-1px); }
+.navtab.active::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent);
 }
-.side-tab-friends:active { transform: translateY(-50%) scale(.95); }
-.side-tab-friends .st-icon { font-size: 1.3rem; line-height: 1; }
-.side-tab-friends .st-label {
-  writing-mode: vertical-rl; text-orientation: mixed;
-  font-size: .72rem; font-weight: 800; letter-spacing: .05em;
-}
+.navtab:active { background: var(--accent-soft); }
+.navtab .bell-badge { top: 2px; right: calc(50% - 22px); }
 
 /* ---------- Álbum activo (chip en header) ---------- */
 .album-chip {
@@ -264,17 +281,24 @@ body.scrolled:not(.search-open) .toolbar .search {
 
 /* ---------- Modal ---------- */
 .modal-back {
-  position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.6);
-  display: none; align-items: flex-end; justify-content: center;
+  position: fixed; inset: 0; z-index: 50; background: rgba(4,6,14,.62);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  display: flex; align-items: flex-end; justify-content: center;
+  visibility: hidden; opacity: 0; pointer-events: none;
+  transition: opacity .24s ease, visibility .24s ease;
 }
-.modal-back.open { display: flex; }
+.modal-back.open { visibility: visible; opacity: 1; pointer-events: auto; }
+/* Bottom-sheet: el panel sube al abrir (el drawer lateral tiene su propia animación). */
+.modal-back:not(.drawer) .modal { transform: translateY(101%); transition: transform .28s cubic-bezier(.22,.61,.36,1); }
+.modal-back.open:not(.drawer) .modal { transform: translateY(0); }
 .modal {
-  width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
-  background: var(--bg-soft); border-radius: 18px 18px 0 0;
-  padding: 16px 16px calc(20px + var(--safe-b));
-  border-top: 2px solid var(--accent);
+  width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto;
+  background: var(--bg-soft); border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: 18px 16px calc(22px + var(--safe-b));
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 -12px 40px rgba(0,0,0,.5);
 }
-.modal h2 { margin: 2px 0 12px; font-size: 1.1rem; }
+.modal h2 { margin: 2px 0 14px; font-size: var(--fs-lg); letter-spacing: -.01em; }
 .modal .close-x {
   position: sticky; top: 0; float: right; background: var(--card-2); color: var(--text);
   border: 1px solid var(--line); border-radius: 999px; width: 34px; height: 34px;
@@ -344,6 +368,72 @@ body.scrolled:not(.search-open) .toolbar .search {
 }
 .toast.show { opacity: 1; }
 .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+
+/* ---------- Dashboard / Inicio ---------- */
+#dashboard { padding: 12px 12px 8px; }
+#dashboard[hidden] { display: none; }
+.dash-hero {
+  display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center;
+  background:
+    radial-gradient(130% 120% at 100% 0%, var(--accent-soft), transparent 62%),
+    var(--card);
+  border: 1px solid var(--hair); border-radius: var(--r-lg); box-shadow: var(--sh-1);
+  padding: 16px; margin-bottom: 12px;
+}
+.ring {
+  --p: 0; width: 88px; height: 88px; border-radius: 50%; position: relative;
+  background: conic-gradient(var(--accent) calc(var(--p) * 1%), rgba(255,255,255,.08) 0);
+  display: grid; place-items: center;
+}
+.ring::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: var(--card); }
+.ring .ring-val { position: relative; z-index: 1; font-weight: 800; font-size: 1.15rem; }
+.dash-hero-info { min-width: 0; }
+.dash-count { font-weight: 800; font-size: var(--fs-lg); }
+.dash-sub { color: var(--muted); font-size: var(--fs-xs); margin-top: 2px; }
+.dash-chips { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+.dash-chip { font-size: var(--fs-xs); font-weight: 700; padding: 4px 9px; border-radius: var(--r-pill); background: var(--card-2); color: var(--muted); }
+.dash-chip.ok { color: #cdebd9; background: rgba(43,213,138,.16); }
+.dash-chip.warn { color: #ffe2b0; background: rgba(246,201,69,.14); }
+.dash-cta {
+  grid-column: 1 / -1; margin-top: 6px; padding: 12px; border-radius: var(--r-md); border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+  font-weight: 800; font-size: var(--fs-md); cursor: pointer; box-shadow: 0 6px 18px var(--accent-glow);
+}
+
+.dash-card {
+  display: block; width: 100%; text-align: left; color: var(--text);
+  background: var(--card); border: 1px solid var(--hair); border-radius: var(--r-lg);
+  box-shadow: var(--sh-1); padding: 14px; margin-bottom: 12px;
+}
+button.dash-card { cursor: pointer; }
+button.dash-card:active { transform: scale(.992); }
+.dash-card-head { display: flex; align-items: center; gap: 8px; }
+.dash-card-title { font-weight: 800; font-size: var(--fs-md); flex: 1; }
+.dash-card-title .em { margin-right: 7px; }
+.dash-chevron { color: var(--muted); font-size: 1.1rem; flex: none; }
+.dash-row { display: flex; align-items: center; gap: 10px; padding: 9px 0 0; margin-top: 9px; border-top: 1px solid var(--hair); }
+.dash-row-main { flex: 1; min-width: 0; }
+.dash-row-title { font-weight: 700; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-row-sub { font-size: var(--fs-xs); color: var(--muted); margin-top: 1px; }
+.dash-pill { font-size: var(--fs-xs); font-weight: 800; padding: 3px 9px; border-radius: var(--r-pill); background: var(--accent-soft); color: #d2ccff; flex: none; }
+.dash-pill.green { background: rgba(43,213,138,.18); color: #cdebd9; }
+.dash-empty { color: var(--muted); font-size: var(--fs-sm); margin-top: 8px; }
+.dash-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.dash-action {
+  display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 13px 6px;
+  background: var(--card); border: 1px solid var(--hair); border-radius: var(--r-md);
+  color: var(--text); font-weight: 700; font-size: var(--fs-xs); cursor: pointer; box-shadow: var(--sh-1);
+}
+.dash-action .da-i { font-size: 1.35rem; line-height: 1; }
+
+/* ---------- Diálogo de confirmación temático ---------- */
+.confirm-card { max-width: 400px; }
+.confirm-msg { font-size: var(--fs-md); margin: 2px 0 18px; line-height: 1.45; }
+.confirm-actions { display: flex; gap: 8px; }
+.confirm-actions button { flex: 1; padding: 12px; border-radius: var(--r-md); border: none; font-weight: 800; font-size: var(--fs-md); cursor: pointer; color: #fff; }
+.confirm-cancel { background: var(--card-2) !important; color: var(--text) !important; border: 1px solid var(--line) !important; }
+.confirm-ok { background: var(--accent); }
+.confirm-ok.danger { background: #c0334a; }
 
 /* ---------- Campanita / Notificaciones ---------- */
 /* El badge va sobre el botón "Avisos" de la barra inferior. */
@@ -445,30 +535,30 @@ body.gated { overflow: hidden; }
     </div>
   </header>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
+  <!-- Inicio / Dashboard -->
+  <main id="dashboard" hidden></main>
+
+  <!-- Toolbar (vista Álbum) -->
+  <div class="toolbar" id="toolbar" hidden>
     <input class="search" id="search" type="search" placeholder="Buscar por número o equipo… (ej: 25, Brasil)" />
-    <div class="filters">
+    <div class="filters" role="group" aria-label="Filtro de láminas">
       <button data-filter="all" class="active">Todas</button>
       <button data-filter="missing">Me faltan</button>
       <button data-filter="repe">Repetidas</button>
     </div>
   </div>
 
-  <!-- Secciones -->
-  <main id="sections"></main>
+  <!-- Secciones (vista Álbum) -->
+  <main id="sections" hidden></main>
 
-  <!-- Barra inferior -->
-  <nav class="bottom-bar">
-    <button class="btn-lists" id="btnLists">📋 Listas</button>
-    <button class="btn-notifs" id="btnNotifs" aria-label="Avisos" style="display:none">🔔 Avisos<span class="bell-badge" id="notifBadge" hidden>0</span></button>
-    <button class="btn-menu" id="btnMenu">⚙️ Menú</button>
+  <!-- Navegación inferior (5 pestañas) -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <button class="navtab active" id="btnHome" aria-current="page"><span class="nt-i">🏠</span><span class="nt-l">Inicio</span></button>
+    <button class="navtab" id="btnAlbum"><span class="nt-i">📒</span><span class="nt-l">Álbum</span></button>
+    <button class="navtab" id="btnFriends"><span class="nt-i">👥</span><span class="nt-l">Amigos</span></button>
+    <button class="navtab" id="btnNotifs" aria-label="Avisos"><span class="nt-i">🔔</span><span class="nt-l">Avisos</span><span class="bell-badge" id="notifBadge" hidden>0</span></button>
+    <button class="navtab" id="btnMenu"><span class="nt-i">⚙️</span><span class="nt-l">Menú</span></button>
   </nav>
-
-  <!-- Pestaña lateral: Amigos (abre el panel lateral) -->
-  <button class="side-tab-friends" id="btnFriends" aria-label="Amigos">
-    <span class="st-icon">👥</span><span class="st-label">Amigos</span>
-  </button>
 
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
@@ -578,7 +668,7 @@ body.gated { overflow: hidden; }
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
@@ -946,6 +1036,7 @@ window.ALBUM_CONFIG = {
   function render() {
     renderProgress();
     renderSections();
+    if (currentView === 'home') renderDashboard();
   }
 
   function renderProgress() {
@@ -1162,8 +1253,8 @@ window.ALBUM_CONFIG = {
     toast('Equipos guardados ✓');
   }
 
-  function resetTeams() {
-    if (!confirm('¿Restaurar los 48 equipos por defecto? (No borra tus láminas marcadas)')) return;
+  async function resetTeams() {
+    if (!(await confirmDialog('¿Restaurar los 48 equipos por defecto? No borra tus láminas marcadas.', { ok: 'Restaurar' }))) return;
     teams = clone(CFG.DEFAULT_TEAMS);
     saveJSON(LS_TEAMS, teams);
     album = CFG.buildAlbum(teams);
@@ -1205,21 +1296,22 @@ window.ALBUM_CONFIG = {
           flushDirty();
         }
       } catch {
-        alert('No se pudo leer el archivo. ¿Es un respaldo válido?');
+        toast('No se pudo leer el archivo. ¿Es un respaldo válido?');
       }
     };
     reader.readAsText(file);
   }
 
-  function resetAll() {
-    if (!confirm('¿Borrar TODO (láminas marcadas y equipos)? Esto no se puede deshacer.')) return;
+  async function resetAll() {
+    if (!(await confirmDialog('¿Borrar las láminas marcadas y los equipos de ESTE dispositivo? Si tienes sesión, tu colección en la nube no se borra desde aquí.', { ok: 'Borrar', danger: true }))) return;
     counts = {}; teams = clone(CFG.DEFAULT_TEAMS); openSections = new Set();
+    dirty = new Set(); saveJSON(LS_DIRTY, []);
     localStorage.removeItem(LS_COUNTS);
     localStorage.removeItem(LS_TEAMS);
     localStorage.removeItem(LS_OPEN);
     album = CFG.buildAlbum(teams);
     rebuildSidMaps();
-    render(); closeModals(); toast('Todo reiniciado');
+    render(); closeModals(); toast('Datos locales borrados');
   }
 
   // ---------- Compartir / copiar ----------
@@ -1275,6 +1367,10 @@ window.ALBUM_CONFIG = {
   let sharedPending = {};     // { sid: deltaAcumulado } pendiente de enviar
   let sharedFlushTimer = null, albumPollTimer = null;
   function isShared() { return currentAlbum.type === 'shared'; }
+
+  // Vista activa (Inicio/dashboard vs Álbum/grilla) y cache de amigos para el dashboard.
+  let currentView = 'home';
+  let lastFriends = { friends: [], incoming: [] };
 
   function apiBase() { return (localStorage.getItem(LS_API) || DEFAULT_API_BASE || '').replace(/\/+$/, ''); }
   function clientId() { return localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || ''; }
@@ -1425,6 +1521,8 @@ window.ALBUM_CONFIG = {
       startNotifPolling();
       await processPendingInvite();   // ?add=<handle> y/o ?join=<code> (puede cambiar de álbum)
       renderAlbumsSection();
+      await loadFriendsData();
+      if (currentView === 'home') renderDashboard();
     } catch (e) { /* offline: seguimos en modo local */ }
   }
 
@@ -1442,6 +1540,7 @@ window.ALBUM_CONFIG = {
     wrap.innerHTML = '<div class="hint">Cargando…</div>';
     try {
       const data = await api('/friends');
+      lastFriends = data || { friends: [], incoming: [] };
       let html = '';
       if (data.incoming && data.incoming.length) {
         html += '<h2 style="font-size:1rem">Solicitudes</h2>';
@@ -1742,7 +1841,7 @@ window.ALBUM_CONFIG = {
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
   }
   async function deleteAlbum(id) {
-    if (!confirm('¿Borrar este álbum compartido? Los miembros dejarán de verlo. Tu colección no se pierde.')) return;
+    if (!(await confirmDialog('¿Borrar este álbum compartido? Los miembros dejarán de verlo. Tu colección no se pierde.', { ok: 'Borrar', danger: true }))) return;
     try {
       await api('/albums/' + id + '/delete', { method: 'POST' });
       toast('Álbum borrado');
@@ -1752,7 +1851,7 @@ window.ALBUM_CONFIG = {
     } catch (e) { toast(e.message || 'No se pudo'); }
   }
   async function leaveAlbum(id, name) {
-    if (!confirm('¿Salir de "' + (name || 'este álbum') + '"?')) return;
+    if (!(await confirmDialog('¿Salir de "' + (name || 'este álbum') + '"?', { ok: 'Salir' }))) return;
     try {
       await api('/albums/' + id + '/leave', { method: 'POST' });
       toast('Saliste del álbum');
@@ -1805,6 +1904,7 @@ window.ALBUM_CONFIG = {
       lastNotif = data || { unread: 0, items: [] };
       setBadge(lastNotif.unread || 0);
       if (el('modalNotifs') && el('modalNotifs').classList.contains('open')) renderNotifs();
+      if (currentView === 'home') renderDashboard();
     } catch (e) { /* silencioso: reintenta al próximo poll */ }
   }
 
@@ -1952,7 +2052,6 @@ window.ALBUM_CONFIG = {
     }
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
-    show('btnNotifs', loggedIn());
     if (!loggedIn()) setBadge(0);
     refreshPushButton();
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
@@ -1962,6 +2061,152 @@ window.ALBUM_CONFIG = {
     updateAlbumChip();
     updateGate();
   }
+  // ===================================================================
+  // ==========   DASHBOARD / INICIO + navegación de vistas   ==========
+  // ===================================================================
+  function setNavActive(id) {
+    ['btnHome', 'btnAlbum'].forEach((x) => {
+      const b = el(x); if (!b) return;
+      const on = x === id;
+      b.classList.toggle('active', on);
+      if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+  }
+  function showView(view) {
+    currentView = view;
+    const home = view === 'home';
+    const dash = el('dashboard'); if (dash) dash.hidden = !home;
+    const tb = el('toolbar'); if (tb) tb.hidden = home;
+    const sec = el('sections'); if (sec) sec.hidden = home;
+    setNavActive(home ? 'btnHome' : 'btnAlbum');
+    if (home) {
+      renderDashboard();
+      loadFriendsData().then(() => { if (currentView === 'home') renderDashboard(); });
+      window.scrollTo(0, 0);
+    }
+    try { window.dispatchEvent(new Event('resize')); } catch {}   // recalcula --header-h
+  }
+
+  async function loadFriendsData() {
+    if (!loggedIn()) { lastFriends = { friends: [], incoming: [] }; return; }
+    try { lastFriends = (await api('/friends')) || { friends: [], incoming: [] }; }
+    catch (e) { /* mantener cache anterior */ }
+  }
+
+  function renderDashboard() {
+    const wrap = el('dashboard');
+    if (!wrap || currentView !== 'home') return;
+    if (!loggedIn()) { wrap.innerHTML = ''; return; }
+    const st = stats();
+    const pct = st.total ? Math.round((st.have / st.total) * 100) : 0;
+    const fr = lastFriends || { friends: [], incoming: [] };
+    const pending = (fr.incoming || []).length;
+    const matchFriends = (fr.friends || []).filter((f) => f.they_give_me > 0).slice(0, 3);
+    const unread = (lastNotif && lastNotif.unread) || 0;
+    const notifItems = ((lastNotif && lastNotif.items) || []).slice(0, 3);
+    const a = isShared() ? myAlbums.find((x) => x.id === currentAlbum.id) : null;
+    const albumTitle = isShared() ? (currentAlbum.name || 'Álbum compartido') : 'Mi álbum';
+    const albumSub = isShared()
+      ? (a ? ((a.role === 'owner' ? 'Tú eres el dueño' : 'de @' + a.owner_handle) + ' · ' + a.members + ' miembro(s)') : 'Compartido')
+      : 'Personal';
+
+    let html = '';
+    html += `<section class="dash-hero">
+        <div class="ring" style="--p:${pct}"><span class="ring-val">${pct}%</span></div>
+        <div class="dash-hero-info">
+          <div class="dash-count">${st.have} / ${st.total}</div>
+          <div class="dash-sub">láminas en tu álbum</div>
+          <div class="dash-chips">
+            <span class="dash-chip ok">✅ ${st.have}</span>
+            <span class="dash-chip">⬜ ${st.missing}</span>
+            <span class="dash-chip warn">🔁 ${st.repesTotal}</span>
+          </div>
+        </div>
+        <button class="dash-cta" id="dashGoAlbum">Seguir completando →</button>
+      </section>`;
+
+    html += `<button class="dash-card" id="dashAlbumCard">
+        <div class="dash-card-head">
+          <div class="dash-card-title"><span class="em">${isShared() ? '👥' : '📒'}</span>${escapeHtml(albumTitle)}</div>
+          <span class="dash-chevron">›</span>
+        </div>
+        <div class="dash-row-sub">${escapeHtml(albumSub)}</div>
+      </button>`;
+
+    html += `<button class="dash-card" id="dashFriendsCard">
+        <div class="dash-card-head">
+          <div class="dash-card-title"><span class="em">👥</span>Amigos</div>
+          ${pending ? `<span class="dash-pill">${pending} solicitud${pending > 1 ? 'es' : ''}</span>` : '<span class="dash-chevron">›</span>'}
+        </div>`;
+    if (matchFriends.length) {
+      matchFriends.forEach((f) => {
+        html += `<div class="dash-row"><div class="dash-row-main">
+            <div class="dash-row-title">${escapeHtml(f.user.name || f.user.handle)}</div>
+            <div class="dash-row-sub">tiene ${f.they_give_me} que te faltan</div>
+          </div><span class="dash-pill green">${f.they_give_me}</span></div>`;
+      });
+    } else {
+      html += `<div class="dash-empty">${(fr.friends || []).length ? 'Ninguna coincidencia nueva ahora.' : 'Agrega amigos para cambiar láminas.'}</div>`;
+    }
+    html += `</button>`;
+
+    html += `<button class="dash-card" id="dashNotifsCard">
+        <div class="dash-card-head">
+          <div class="dash-card-title"><span class="em">🔔</span>Avisos</div>
+          ${unread ? `<span class="dash-pill">${unread} nuevo${unread > 1 ? 's' : ''}</span>` : '<span class="dash-chevron">›</span>'}
+        </div>`;
+    if (notifItems.length) {
+      notifItems.forEach((n) => {
+        html += `<div class="dash-row"><div class="dash-row-main">
+            <div class="dash-row-title">${escapeHtml(n.friend.name || n.friend.handle)}</div>
+            <div class="dash-row-sub">te puede pasar ${n.they_give}</div>
+          </div>${n.unread ? '<span class="dash-pill">nuevo</span>' : ''}</div>`;
+      });
+    } else {
+      html += `<div class="dash-empty">Sin novedades por ahora.</div>`;
+    }
+    html += `</button>`;
+
+    html += `<div class="dash-actions">
+        <button class="dash-action" id="dashActLists"><span class="da-i">📋</span>Listas</button>
+        <button class="dash-action" id="dashActInvite"><span class="da-i">🟢</span>Invitar</button>
+        <button class="dash-action" id="dashActShare"><span class="da-i">👥</span>Compartir</button>
+      </div>`;
+
+    wrap.innerHTML = html;
+    const w = (id, fn) => { const e = el(id); if (e) e.addEventListener('click', fn); };
+    w('dashGoAlbum', () => showView('album'));
+    w('dashAlbumCard', openFriends);
+    w('dashFriendsCard', openFriends);
+    w('dashNotifsCard', openNotifs);
+    w('dashActLists', openLists);
+    w('dashActInvite', inviteWhatsApp);
+    w('dashActShare', openFriends);
+  }
+
+  // Diálogo de confirmación temático (reemplaza confirm()/alert() nativos).
+  function confirmDialog(message, opts = {}) {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 'modal-back';
+      back.innerHTML = `<div class="modal confirm-card" role="dialog" aria-modal="true">
+          <div class="confirm-msg">${escapeHtml(message)}</div>
+          <div class="confirm-actions">
+            <button class="confirm-cancel" type="button">${escapeHtml(opts.cancel || 'Cancelar')}</button>
+            <button class="confirm-ok ${opts.danger ? 'danger' : ''}" type="button">${escapeHtml(opts.ok || 'Confirmar')}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(back);
+      const close = (val) => { back.classList.remove('open'); setTimeout(() => back.remove(), 250); document.removeEventListener('keydown', onKey); resolve(val); };
+      const onKey = (e) => { if (e.key === 'Escape') close(false); };
+      back.querySelector('.confirm-cancel').addEventListener('click', () => close(false));
+      back.querySelector('.confirm-ok').addEventListener('click', () => close(true));
+      back.addEventListener('click', (e) => { if (e.target === back) close(false); });
+      document.addEventListener('keydown', onKey);
+      requestAnimationFrame(() => { back.classList.add('open'); const ok = back.querySelector('.confirm-ok'); if (ok) ok.focus(); });
+    });
+  }
+
   // ---------- Eventos ----------
   function bind() {
     el('search').addEventListener('input', (e) => {
@@ -1976,7 +2221,6 @@ window.ALBUM_CONFIG = {
         renderSections();
       });
     });
-    el('btnLists').addEventListener('click', openLists);
     el('btnMenu').addEventListener('click', openMenu);
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
     document.querySelectorAll('.modal-back').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModals(); }));
@@ -2000,6 +2244,8 @@ window.ALBUM_CONFIG = {
       const open = document.body.classList.toggle('search-open');
       if (open) { const s = el('search'); if (s) setTimeout(() => s.focus(), 0); }
     });
+    on('btnHome', 'click', () => showView('home'));
+    on('btnAlbum', 'click', () => showView('album'));
     on('btnFriends', 'click', openFriends);
     on('albumChip', 'click', openFriends);
     on('btnNotifs', 'click', openNotifs);
@@ -2040,9 +2286,17 @@ window.ALBUM_CONFIG = {
   captureInviteParams();   // lee ?add=<handle> antes del login para procesarlo después
   rebuildSidMaps();
   bind();
+  // a11y: marca los paneles como diálogos y permite cerrarlos con ESC.
+  document.querySelectorAll('.modal-back > .modal').forEach((m) => {
+    m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.querySelector('.modal-back.open')) closeModals();
+  });
   setupStickyHeader();
   render();
   updateCloudUI();
+  showView('home');   // landing = Inicio (dashboard)
   // El script de Google es async: apenas cargue, inicializa y pinta el botón
   // del gate (login obligatorio). Robusto aunque cargue después del 'load'.
   whenGoogleReady(() => { initGoogle(); updateGate(); });

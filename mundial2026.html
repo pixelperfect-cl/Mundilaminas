@@ -94,7 +94,7 @@ body {
 .header-row { display: flex; align-items: center; gap: 12px; }
 .progress-wrap { margin: 0; flex: 1; min-width: 0; }
 .hdr-avatar {
-  flex: none; width: 36px; height: 36px; border-radius: 50%;
+  flex: none; position: relative; width: 36px; height: 36px; border-radius: 50%;
   display: grid; place-items: center; cursor: pointer;
   background: rgba(255,255,255,.18); color: #fff;
   border: 1.5px solid rgba(255,255,255,.45);
@@ -103,6 +103,15 @@ body {
 }
 .hdr-avatar:active { transform: scale(.92); }
 body.scrolled .hdr-avatar { width: 30px; height: 30px; font-size: .9rem; }
+.avatar-badge {
+  position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px;
+  background: var(--red); color: #fff; border: 2px solid #1a1d3a; border-radius: 999px;
+  font-size: .6rem; font-weight: 800; line-height: 1; display: grid; place-items: center;
+}
+.inline-badge {
+  display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 7px;
+  background: var(--red); color: #fff; border-radius: 999px; font-size: .68rem; font-weight: 800;
+}
 .progress-bar {
   height: 11px; border-radius: 999px; background: rgba(255,255,255,.22);
   overflow: hidden; transition: height .18s ease;
@@ -205,7 +214,7 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
   border-radius: 999px; padding: 2px 6px; box-shadow: 0 2px 6px rgba(0,0,0,.4);
 }
 
-/* ---------- Navegación inferior (4 pestañas) ---------- */
+/* ---------- Navegación inferior (3 pestañas) ---------- */
 .bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
   display: flex; gap: 2px;
@@ -230,23 +239,6 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
 }
 .navtab:active { background: var(--accent-soft); }
 .navtab .bell-badge { top: 2px; right: calc(50% - 22px); }
-
-/* ---------- Botón flotante de Amigos (rectángulo flotante, derecha, centrado) ---------- */
-.side-tab-friends {
-  position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 48;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-  width: 54px; padding: 16px 0; border: none; cursor: pointer;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px var(--accent-glow), 0 2px 8px rgba(0,0,0,.5);
-  transition: transform .12s ease;
-}
-.side-tab-friends:active { transform: translateY(-50%) scale(.94); }
-.side-tab-friends .st-icon { font-size: 1.5rem; line-height: 1; }
-.side-tab-friends .st-label {
-  writing-mode: vertical-rl; text-orientation: mixed;
-  font-size: .7rem; font-weight: 800; letter-spacing: .04em;
-}
 
 /* ---------- Amigos ---------- */
 .code-card {
@@ -623,7 +615,7 @@ body.gated { overflow: hidden; }
           <span id="progressPct">0%</span>
         </div>
       </div>
-      <button class="hdr-avatar" id="hdrAvatar" aria-label="Tu cuenta y menú" title="Tu cuenta y menú">·</button>
+      <button class="hdr-avatar" id="hdrAvatar" aria-label="Tu cuenta, avisos y configuración" title="Tu cuenta y configuración"><span class="avatar-ini" id="hdrAvatarIni">·</span><span class="avatar-badge" id="notifBadge" hidden>0</span></button>
     </div>
   </header>
 
@@ -643,18 +635,12 @@ body.gated { overflow: hidden; }
   <!-- Secciones (vista Álbum) -->
   <main id="sections" hidden></main>
 
-  <!-- Navegación inferior (4 pestañas; Amigos va en el botón flotante) -->
+  <!-- Navegación inferior (3 pestañas) -->
   <nav class="bottom-nav" aria-label="Navegación principal">
     <button class="navtab active" id="btnHome" aria-current="page"><span class="nt-i">🏠</span><span class="nt-l">Inicio</span></button>
-    <button class="navtab" id="btnAlbum"><span class="nt-i">📒</span><span class="nt-l">Álbum</span></button>
-    <button class="navtab" id="btnNotifs" aria-label="Avisos"><span class="nt-i">🔔</span><span class="nt-l">Avisos</span><span class="bell-badge" id="notifBadge" hidden>0</span></button>
-    <button class="navtab" id="btnMenu"><span class="nt-i">⚙️</span><span class="nt-l">Menú</span></button>
+    <button class="navtab" id="btnLists"><span class="nt-i">📋</span><span class="nt-l">Listas</span></button>
+    <button class="navtab" id="btnFriends"><span class="nt-i">👥</span><span class="nt-l">Amigos</span></button>
   </nav>
-
-  <!-- Botón flotante de Amigos: pestaña vertical pegada al borde derecho, centrada -->
-  <button class="side-tab-friends" id="btnFriends" aria-label="Amigos">
-    <span class="st-icon">👥</span><span class="st-label">Amigos</span>
-  </button>
 
   <!-- Modal: Listas -->
   <div class="modal-back" id="modalLists">
@@ -678,7 +664,7 @@ body.gated { overflow: hidden; }
   <div class="modal-back" id="modalMenu">
     <div class="modal">
       <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
-      <h2>⚙️ Menú</h2>
+      <h2>⚙️ Configuraciones</h2>
 
       <div class="stat-row">
         <div class="stat"><div class="big" id="statHave">0</div><div class="lab">Tengo</div></div>
@@ -686,7 +672,12 @@ body.gated { overflow: hidden; }
         <div class="stat"><div class="big" id="statRepes">0</div><div class="lab">Repes</div></div>
       </div>
 
-      <h2 style="font-size:1rem">☁️ Cuenta / Nube</h2>
+      <h2 style="font-size:1rem">🔔 Avisos</h2>
+      <div class="modal-actions">
+        <button class="act-share" id="btnAvisos">🔔 Ver mis avisos<span class="inline-badge" id="notifBadgeMenu" hidden>0</span></button>
+      </div>
+
+      <h2 style="font-size:1rem;margin-top:18px">☁️ Cuenta / Nube</h2>
       <p class="hint" id="acctStatus">Nube sin configurar (opcional).</p>
       <div id="gbtn"></div>
       <div class="modal-actions">
@@ -1806,10 +1797,13 @@ window.ALBUM_CONFIG = {
   let lastNotif = { unread: 0, items: [] };
 
   function setBadge(n) {
-    const b = el('notifBadge');
-    if (!b) return;
-    if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.hidden = false; }
-    else b.hidden = true;
+    const txt = n > 99 ? '99+' : String(n);
+    ['notifBadge', 'notifBadgeMenu'].forEach((id) => {
+      const b = el(id);
+      if (!b) return;
+      if (n > 0) { b.textContent = txt; b.hidden = false; }
+      else b.hidden = true;
+    });
   }
 
   async function loadNotifications() {
@@ -1972,7 +1966,7 @@ window.ALBUM_CONFIG = {
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
-    const av = el('hdrAvatar');
+    const av = el('hdrAvatarIni');
     if (av) av.textContent = loggedIn() ? ((me.name || me.handle || '·').trim().charAt(0).toUpperCase() || '·') : '·';
     updateGate();
   }
@@ -1980,7 +1974,7 @@ window.ALBUM_CONFIG = {
   // ==========   DASHBOARD / INICIO + navegación de vistas   ==========
   // ===================================================================
   function setNavActive(id) {
-    ['btnHome', 'btnAlbum'].forEach((x) => {
+    ['btnHome'].forEach((x) => {
       const b = el(x); if (!b) return;
       const on = x === id;
       b.classList.toggle('active', on);
@@ -2124,7 +2118,6 @@ window.ALBUM_CONFIG = {
         renderSections();
       });
     });
-    el('btnMenu').addEventListener('click', openMenu);
     { const ab = el('btnAbout'); if (ab) ab.addEventListener('click', openAbout); }
     { const lp = el('lpStart'); if (lp) lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); }
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
@@ -2145,10 +2138,10 @@ window.ALBUM_CONFIG = {
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnHome', 'click', () => showView('home'));
-    on('btnAlbum', 'click', () => showView('album'));
+    on('btnLists', 'click', openLists);
     on('hdrAvatar', 'click', openMenu);
     on('btnFriends', 'click', openFriends);
-    on('btnNotifs', 'click', openNotifs);
+    on('btnAvisos', 'click', () => { closeModals(); openNotifs(); });
     on('btnPush', 'click', togglePush);
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);

@@ -736,10 +736,13 @@
   let lastNotif = { unread: 0, items: [] };
 
   function setBadge(n) {
-    const b = el('notifBadge');
-    if (!b) return;
-    if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.hidden = false; }
-    else b.hidden = true;
+    const txt = n > 99 ? '99+' : String(n);
+    ['notifBadge', 'notifBadgeMenu'].forEach((id) => {
+      const b = el(id);
+      if (!b) return;
+      if (n > 0) { b.textContent = txt; b.hidden = false; }
+      else b.hidden = true;
+    });
   }
 
   async function loadNotifications() {
@@ -902,7 +905,7 @@
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
-    const av = el('hdrAvatar');
+    const av = el('hdrAvatarIni');
     if (av) av.textContent = loggedIn() ? ((me.name || me.handle || '·').trim().charAt(0).toUpperCase() || '·') : '·';
     updateGate();
   }
@@ -910,7 +913,7 @@
   // ==========   DASHBOARD / INICIO + navegación de vistas   ==========
   // ===================================================================
   function setNavActive(id) {
-    ['btnHome', 'btnAlbum'].forEach((x) => {
+    ['btnHome'].forEach((x) => {
       const b = el(x); if (!b) return;
       const on = x === id;
       b.classList.toggle('active', on);
@@ -1054,7 +1057,6 @@
         renderSections();
       });
     });
-    el('btnMenu').addEventListener('click', openMenu);
     { const ab = el('btnAbout'); if (ab) ab.addEventListener('click', openAbout); }
     { const lp = el('lpStart'); if (lp) lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); }
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
@@ -1075,10 +1077,10 @@
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnHome', 'click', () => showView('home'));
-    on('btnAlbum', 'click', () => showView('album'));
+    on('btnLists', 'click', openLists);
     on('hdrAvatar', 'click', openMenu);
     on('btnFriends', 'click', openFriends);
-    on('btnNotifs', 'click', openNotifs);
+    on('btnAvisos', 'click', () => { closeModals(); openNotifs(); });
     on('btnPush', 'click', togglePush);
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);

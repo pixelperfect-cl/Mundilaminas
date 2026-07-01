@@ -43,3 +43,16 @@ function require_user() {
   if (!$u) fail('No autorizado', 401);
   return $u;
 }
+
+// Igual que require_user pero además exige que el correo del usuario esté en la
+// allowlist de admins (config 'admin_emails'). Devuelve el payload de sesión.
+function require_admin() {
+  $u = require_user();
+  $pdo = db();
+  $s = $pdo->prepare('SELECT email FROM users WHERE id = ?');
+  $s->execute([$u['uid']]);
+  $email = strtolower(trim((string)$s->fetchColumn()));
+  $admins = array_map(fn($e) => strtolower(trim($e)), config()['admin_emails'] ?? []);
+  if ($email === '' || !in_array($email, $admins, true)) fail('Acceso restringido', 403);
+  return $u;
+}

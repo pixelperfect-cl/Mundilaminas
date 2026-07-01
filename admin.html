@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Admin · Mundiláminas</title>
+<style>
+  :root {
+    --bg: #0d1030; --card: #171a44; --card2: #1e2255; --line: #2b3070;
+    --txt: #eef0ff; --dim: #a7abd6; --accent: #7c5cff; --accent2: #33c98a;
+    --warn: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 50% -10%, #1a1f5a 0%, var(--bg) 60%) fixed;
+    color: var(--txt); min-height: 100vh; padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  h1 { font-size: 1.5rem; margin: 0; letter-spacing: .3px; }
+  h1 small { color: var(--dim); font-weight: 500; font-size: .8rem; display: block; margin-top: 2px; }
+  .btn {
+    background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 10px;
+    font-weight: 600; cursor: pointer; font-size: .92rem; text-decoration: none; display: inline-block;
+  }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--dim); }
+  .btn:active { transform: translateY(1px); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .stat .n { font-size: 1.8rem; font-weight: 800; line-height: 1.1; }
+  .stat .l { color: var(--dim); font-size: .78rem; margin-top: 4px; }
+  .stat .sub { color: var(--accent2); font-size: .72rem; margin-top: 6px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 22px; }
+  .panel h2 { font-size: 1rem; margin: 0 0 14px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; }
+  .chart { display: flex; align-items: flex-end; gap: 6px; height: 130px; }
+  .bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+  .bar .col { width: 100%; background: linear-gradient(180deg, var(--accent), #4a34c9); border-radius: 6px 6px 0 0; min-height: 3px; transition: height .3s; }
+  .bar .v { font-size: .7rem; color: var(--txt); }
+  .bar .d { font-size: .62rem; color: var(--dim); white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--dim); font-weight: 600; font-size: .76rem; text-transform: uppercase; letter-spacing: .4px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pct { display: inline-block; min-width: 46px; text-align: right; font-weight: 700; }
+  .msg { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 26px; text-align: center; color: var(--dim); }
+  .msg.err { border-color: var(--warn); color: #ffd3d3; }
+  .msg a { color: var(--accent); }
+  .row-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .muted { color: var(--dim); font-size: .8rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📊 Admin · Mundiláminas <small id="sub">Panel de estadísticas</small></h1>
+    <div class="row-actions">
+      <button class="btn" id="btnCsv">⬇︎ Exportar CSV</button>
+      <button class="btn ghost" id="btnReload">↻ Actualizar</button>
+      <a class="btn ghost" href="/index.html">← App</a>
+    </div>
+  </header>
+  <div id="content"><div class="msg">Cargando…</div></div>
+  <p class="muted" id="foot"></p>
+</div>
+
+<script>
+(function () {
+  var TOKEN = localStorage.getItem('wc26-token') || '';
+  var content = document.getElementById('content');
+  var foot = document.getElementById('foot');
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function showMsg(html, isErr) {
+    content.innerHTML = '<div class="msg' + (isErr ? ' err' : '') + '">' + html + '</div>';
+  }
+
+  async function api(path) {
+    var res = await fetch(path, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    if (res.status === 401) throw { code: 401 };
+    if (res.status === 403) throw { code: 403 };
+    if (!res.ok) throw { code: res.status };
+    return res;
+  }
+
+  function card(n, label, sub) {
+    return '<div class="stat"><div class="n">' + n + '</div><div class="l">' + label + '</div>'
+      + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+  }
+
+  function render(s) {
+    var cards = ''
+      + card(s.users_total, 'Usuarios registrados', '+' + s.users_today + ' hoy · +' + s.users_7d + ' en 7d')
+      + card(s.active_7d, 'Activos (7 días)', s.active_30d + ' en 30 días')
+      + card(s.avg_completion_pct + '%', 'Avance promedio', '~' + s.avg_owned + ' de ' + s.total_stickers + ' láminas')
+      + card(s.users_with_any, 'Con colección', s.stickers_logged + ' láminas marcadas')
+      + card(s.push_users, 'Con notificaciones', s.push_subscriptions + ' dispositivos')
+      + card(s.friend_pairs, 'Amistades', s.friend_pending + ' solicitudes pend.')
+      + card(s.dupes_total, 'Repetidas totales', 'en circulación')
+      + card('+' + s.users_30d, 'Altas 30 días', '');
+
+    // Chart de altas por día
+    var days = s.signups_by_day || [];
+    var max = days.reduce(function (m, d) { return Math.max(m, d.count); }, 1);
+    var bars = days.map(function (d) {
+      var h = Math.round((d.count / max) * 100);
+      var lbl = d.date ? d.date.slice(5) : '';
+      return '<div class="bar"><div class="v">' + d.count + '</div>'
+        + '<div class="col" style="height:' + h + '%"></div>'
+        + '<div class="d">' + lbl + '</div></div>';
+    }).join('');
+    var chart = days.length
+      ? '<div class="panel"><h2>Altas por día (14 días)</h2><div class="chart">' + bars + '</div></div>'
+      : '';
+
+    // Top usuarios
+    var top = (s.top_users || []).map(function (u, i) {
+      return '<tr><td>' + (i + 1) + '</td>'
+        + '<td>' + esc(u.name || '') + ' <span class="muted">@' + esc(u.handle) + '</span></td>'
+        + '<td class="num"><span class="pct">' + u.pct + '%</span></td>'
+        + '<td class="num">' + u.owned + '</td>'
+        + '<td class="num">' + u.total_qty + '</td>'
+        + '<td class="muted">' + esc((u.created_at || '').slice(0, 10)) + '</td></tr>';
+    }).join('');
+    var topPanel = '<div class="panel"><h2>Top coleccionistas</h2><table>'
+      + '<thead><tr><th>#</th><th>Usuario</th><th class="num">Avance</th><th class="num">Distintas</th><th class="num">Total</th><th>Registro</th></tr></thead>'
+      + '<tbody>' + (top || '<tr><td colspan="6" class="muted">Sin datos aún</td></tr>') + '</tbody></table></div>';
+
+    content.innerHTML = '<div class="grid">' + cards + '</div>' + chart + topPanel;
+    foot.textContent = 'Actualizado ' + new Date().toLocaleString('es-CL');
+  }
+
+  async function load() {
+    if (!TOKEN) {
+      showMsg('No hay sesión. <a href="/index.html">Inicia sesión en la app</a> con tu cuenta de admin y vuelve aquí.', true);
+      return;
+    }
+    showMsg('Cargando…');
+    try {
+      var res = await api('/admin/stats');
+      render(await res.json());
+    } catch (e) {
+      if (e.code === 401) showMsg('Tu sesión expiró. <a href="/index.html">Inicia sesión de nuevo</a> y vuelve.', true);
+      else if (e.code === 403) showMsg('Tu cuenta no tiene acceso de admin. Pídele al administrador que agregue tu correo a <code>admin_emails</code>.', true);
+      else showMsg('Error al cargar (' + (e.code || '?') + ').', true);
+    }
+  }
+
+  async function downloadCsv() {
+    if (!TOKEN) { alert('Inicia sesión primero.'); return; }
+    try {
+      var res = await api('/admin/users.csv');
+      var blob = await res.blob();
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'mundilaminas-usuarios.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    } catch (e) {
+      alert(e.code === 403 ? 'Sin acceso de admin.' : 'No se pudo exportar (' + (e.code || '?') + ').');
+    }
+  }
+
+  document.getElementById('btnReload').addEventListener('click', load);
+  document.getElementById('btnCsv').addEventListener('click', downloadCsv);
+  load();
+})();
+</script>
+</body>
+</html>

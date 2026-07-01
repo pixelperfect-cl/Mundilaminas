@@ -30,6 +30,12 @@ return [
     'http://localhost:8000',
   ],
 
+  // Correos con acceso al panel de admin (/admin.html, /admin/stats, /admin/users.csv).
+  // Debe ser el correo con que inicias sesión en la app con Google.
+  'admin_emails' => [
+    'tucorreo@gmail.com',
+  ],
+
   // Web Push (VAPID). Genera las llaves con:
   //   php -r "require 'vendor/autoload.php'; var_dump(Minishlink\\WebPush\\VAPID::createVapidKeys());"
   // La clave 'public' también va en app.js (PUSH_VAPID_PUBLIC).

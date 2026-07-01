@@ -321,4 +321,110 @@ if ($method === 'POST' && $path === 'push/unsubscribe') {
   json_out(['ok' => true]);
 }
 
+// ---------- Admin: estadísticas (solo correos en 'admin_emails') ----------
+if ($method === 'GET' && $path === 'admin/stats') {
+  require_admin();
+  $pdo = db();
+  $TOTAL = 980;   // láminas del álbum (coincide con data.js)
+  $q = fn($sql) => $pdo->query($sql)->fetchColumn();
+  $st = [];
+
+  // Usuarios
+  $st['users_total'] = (int)$q('SELECT COUNT(*) FROM users');
+  $st['users_today'] = (int)$q('SELECT COUNT(*) FROM users WHERE created_at >= CURDATE()');
+  $st['users_7d']    = (int)$q('SELECT COUNT(*) FROM users WHERE created_at >= (NOW() - INTERVAL 7 DAY)');
+  $st['users_30d']   = (int)$q('SELECT COUNT(*) FROM users WHERE created_at >= (NOW() - INTERVAL 30 DAY)');
+
+  // Altas por día (últimos 14 días)
+  $rows = $pdo->query(
+    "SELECT DATE(created_at) d, COUNT(*) c FROM users
+      WHERE created_at >= (CURDATE() - INTERVAL 13 DAY)
+      GROUP BY DATE(created_at) ORDER BY d"
+  )->fetchAll();
+  $st['signups_by_day'] = array_map(fn($r) => ['date' => $r['d'], 'count' => (int)$r['c']], $rows);
+
+  // Actividad (colección tocada recientemente)
+  $st['active_7d']  = (int)$q('SELECT COUNT(DISTINCT user_id) FROM collection WHERE updated_at >= (NOW() - INTERVAL 7 DAY)');
+  $st['active_30d'] = (int)$q('SELECT COUNT(DISTINCT user_id) FROM collection WHERE updated_at >= (NOW() - INTERVAL 30 DAY)');
+
+  // Push
+  $st['push_users']        = (int)$q('SELECT COUNT(DISTINCT user_id) FROM push_subscriptions');
+  $st['push_subscriptions'] = (int)$q('SELECT COUNT(*) FROM push_subscriptions');
+
+  // Amistades (friendships es bidireccional → /2 para pares)
+  $st['friend_pairs']      = intdiv((int)$q("SELECT COUNT(*) FROM friendships WHERE status='accepted'"), 2);
+  $st['friend_pending']    = (int)$q("SELECT COUNT(*) FROM friendships WHERE status='pending'");
+
+  // Colección
+  $st['users_with_any']  = (int)$q('SELECT COUNT(DISTINCT user_id) FROM collection');
+  $st['stickers_logged'] = (int)$q('SELECT COALESCE(SUM(qty),0) FROM collection');
+  $st['dupes_total']     = (int)$q('SELECT COALESCE(SUM(qty-1),0) FROM collection WHERE qty >= 2');
+  $st['total_stickers']  = $TOTAL;
+
+  // Avance promedio (láminas distintas poseídas / total), sobre quienes tienen colección
+  $avg = $pdo->query(
+    'SELECT AVG(cnt) FROM (SELECT user_id, COUNT(*) cnt FROM collection WHERE qty >= 1 GROUP BY user_id) t'
+  )->fetchColumn();
+  $avgOwned = $avg !== null ? (float)$avg : 0;
+  $st['avg_owned']         = round($avgOwned, 1);
+  $st['avg_completion_pct'] = $TOTAL ? round(($avgOwned / $TOTAL) * 100, 1) : 0;
+
+  // Top usuarios por completitud
+  $top = $pdo->query(
+    "SELECT u.handle, u.name, u.created_at,
+            COALESCE(c.owned,0) owned, COALESCE(c.total,0) total_qty
+       FROM users u
+       LEFT JOIN (SELECT user_id, COUNT(*) owned, SUM(qty) total
+                    FROM collection WHERE qty >= 1 GROUP BY user_id) c ON c.user_id = u.id
+      ORDER BY owned DESC, u.created_at ASC
+      LIMIT 15"
+  )->fetchAll();
+  $st['top_users'] = array_map(fn($r) => [
+    'handle'     => $r['handle'],
+    'name'       => $r['name'],
+    'owned'      => (int)$r['owned'],
+    'total_qty'  => (int)$r['total_qty'],
+    'pct'        => round(((int)$r['owned'] / $TOTAL) * 100, 1),
+    'created_at' => $r['created_at'],
+  ], $top);
+
+  json_out($st);
+}
+
+// ---------- Admin: export CSV de usuarios ----------
+if ($method === 'GET' && $path === 'admin/users.csv') {
+  require_admin();
+  $pdo = db();
+  $rows = $pdo->query(
+    "SELECT u.id, u.handle, u.name, u.email, u.created_at,
+            COALESCE(c.owned,0) owned, COALESCE(c.total,0) total_qty,
+            COALESCE(c.dupes,0) dupes, c.last_activity,
+            COALESCE(f.friends,0) friends,
+            (SELECT COUNT(*) FROM push_subscriptions ps WHERE ps.user_id = u.id) push
+       FROM users u
+       LEFT JOIN (SELECT user_id, COUNT(*) owned, SUM(qty) total,
+                         SUM(GREATEST(qty-1,0)) dupes, MAX(updated_at) last_activity
+                    FROM collection GROUP BY user_id) c ON c.user_id = u.id
+       LEFT JOIN (SELECT user_id, COUNT(*) friends
+                    FROM friendships WHERE status='accepted' GROUP BY user_id) f ON f.user_id = u.id
+      ORDER BY u.created_at ASC"
+  )->fetchAll();
+
+  header('Content-Type: text/csv; charset=utf-8');
+  header('Content-Disposition: attachment; filename="mundilaminas-usuarios.csv"');
+  header('Cache-Control: no-store');
+  $out = fopen('php://output', 'w');
+  fwrite($out, "\xEF\xBB\xBF");   // BOM para que Excel lea UTF-8
+  fputcsv($out, ['id','handle','nombre','email','registrado','laminas_distintas','laminas_totales','repes','ultima_actividad','amigos','push']);
+  foreach ($rows as $r) {
+    fputcsv($out, [
+      $r['id'], $r['handle'], $r['name'], $r['email'], $r['created_at'],
+      (int)$r['owned'], (int)$r['total_qty'], (int)$r['dupes'], $r['last_activity'] ?? '',
+      (int)$r['friends'], ((int)$r['push'] ? 'sí' : 'no'),
+    ]);
+  }
+  fclose($out);
+  exit;
+}
+
 fail('Ruta no encontrada', 404);

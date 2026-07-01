@@ -17,10 +17,11 @@ const css = read('styles.css');
 const dataJs = read('data.js');
 const appJs = read('app.js');
 
+// El match ignora el ?v=... de cache-busting en el href/src.
 html = html
-  .replace('<link rel="stylesheet" href="styles.css" />', `<style>\n${css}\n</style>`)
-  .replace('<script src="data.js"></script>', `<script>\n${dataJs}\n</script>`)
-  .replace('<script src="app.js"></script>', `<script>\n${appJs}\n</script>`);
+  .replace(/<link rel="stylesheet" href="styles\.css[^"]*" \/>/, `<style>\n${css}\n</style>`)
+  .replace(/<script src="data\.js[^"]*"><\/script>/, `<script>\n${dataJs}\n</script>`)
+  .replace(/<script src="app\.js[^"]*"><\/script>/, `<script>\n${appJs}\n</script>`);
 
 fs.writeFileSync(path.join(dir, 'mundial2026.html'), html);
 console.log('OK -> mundial2026.html (' + html.length + ' bytes)');

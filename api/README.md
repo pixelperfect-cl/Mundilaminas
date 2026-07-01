@@ -66,7 +66,7 @@ Auth = enviar `Authorization: Bearer <token>` (el token lo entrega `/auth/google
 
 El frontend envía un identificador **estable** por lámina, independiente del orden:
 - Introducción → `INTRO-1` … `INTRO-9`
-- FIFA Museum  → `MUSEUM-1` … `MUSEUM-11`
+- Leyendas     → `MUSEUM-1` … `MUSEUM-11`
 - Equipos      → `CODIGO-slot`, ej. `ALG-5`, `BRA-1`, `MEX-13`
 
 El cruce con un amigo es una intersección: *él te da* las láminas que tiene

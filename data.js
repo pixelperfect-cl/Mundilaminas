@@ -1,16 +1,17 @@
 /*
- * Álbum Panini FIFA World Cup 2026 — estructura de la colección.
+ * Estructura de la colección de láminas del mundial de fútbol 2026.
+ * App NO oficial, sin relación con FIFA ni Panini.
  *
  * Total: 994 láminas
  *   - 9  láminas de Introducción (foil/brillantes)  → FW0, FWC1–FWC8
- *   - 11 láminas FIFA Museum (leyendas)             → FWC9–FWC19
- *   - 14 láminas Colección Coca-Cola (LatAm)        → CC1–CC14
+ *   - 11 láminas de Leyendas (campeones históricos) → FWC9–FWC19
+ *   - 14 láminas de la Colección especial           → CC1–CC14
  *   - 48 equipos × 20 láminas = 960
  *
- * Los 48 equipos y sus grupos (A-L) corresponden al SORTEO FINAL OFICIAL
- * del Mundial 2026 (Washington D.C., 5 dic 2025), con los repechajes ya
- * resueltos. Igual puedes editar cualquier equipo desde la app (botón ✏️)
- * para que calce exactamente con tu álbum físico. La numeración se recalcula sola.
+ * Los 48 equipos y sus grupos (A-L) siguen el sorteo del mundial 2026,
+ * con los repechajes ya resueltos. Igual puedes editar cualquier equipo
+ * desde la app (botón ✏️) para que calce exactamente con tu álbum físico.
+ * La numeración se recalcula sola.
  *
  * Numeración MOSTRADA:
  *   Especiales:  su código impreso (FW0, FWC1–FWC19, CC1–CC14)
@@ -26,18 +27,18 @@
 // código impreso en el álbum (FW0, FWC1…), NO un 1,2,3 correlativo.
 // { code: código impreso, label: qué es }
 const INTRO_STICKERS = [
-  { code: 'FW0',  label: 'Logo Panini' },
-  { code: 'FWC1', label: 'Copa (parte superior)' },
-  { code: 'FWC2', label: 'Copa (parte inferior)' },
-  { code: 'FWC3', label: 'Mascotas (Maple · Zayu · Clutch)' },
-  { code: 'FWC4', label: 'Eslogan oficial' },
-  { code: 'FWC5', label: 'Balón oficial (Trionda)' },
+  { code: 'FW0',  label: 'Portada (foil)' },
+  { code: 'FWC1', label: 'Trofeo (parte superior)' },
+  { code: 'FWC2', label: 'Trofeo (parte inferior)' },
+  { code: 'FWC3', label: 'Mascotas del torneo' },
+  { code: 'FWC4', label: 'Eslogan' },
+  { code: 'FWC5', label: 'Balón' },
   { code: 'FWC6', label: 'Sede: Canadá' },
   { code: 'FWC7', label: 'Sede: México' },
   { code: 'FWC8', label: 'Sede: Estados Unidos' },
 ];
 
-// 11 láminas FIFA Museum (campeones históricos), códigos FWC9–FWC19.
+// 11 láminas de Leyendas (campeones históricos), códigos FWC9–FWC19.
 // OJO: los rótulos son los CAMPEONES por año; si tu álbum los nombra por
 // SEDE+año (Suiza 1954, Chile 1962…) se cambian solo textos, mismos sids.
 const MUSEUM_STICKERS = [
@@ -54,7 +55,7 @@ const MUSEUM_STICKERS = [
   { code: 'FWC19', label: 'Argentina 2022' },
 ];
 
-// 14 láminas de la Colección Coca-Cola (edición Latinoamérica), códigos CC1–CC14.
+// 14 láminas de la Colección especial (edición Latinoamérica), códigos CC1–CC14.
 // OJO: los 14 nombres están confirmados; el orden exacto CC1..CC14 puede ajustarse.
 const COCA_COLA_STICKERS = [
   { code: 'CC1',  label: 'Lamine Yamal (España)' },
@@ -73,7 +74,7 @@ const COCA_COLA_STICKERS = [
   { code: 'CC14', label: 'Lautaro Martínez (Argentina)' },
 ];
 
-// 48 equipos en el MISMO ORDEN del álbum físico Panini FIFA World Cup 2026,
+// 48 equipos en el MISMO ORDEN del álbum físico del mundial 2026,
 // con la PÁGINA en que empieza cada selección. EDITABLE desde la app.
 // Cada objeto: { group, name, code, page }
 const TEAMS = [
@@ -230,9 +231,9 @@ function buildAlbum(teams) {
     });
     sections.push(sec);
   }
-  addSpecial('intro',  'Introducción',            'INTRO',  INTRO_STICKERS);
-  addSpecial('museum', 'FIFA Museum (Leyendas)',  'MUSEUM', MUSEUM_STICKERS);
-  addSpecial('coca',   'Colección Coca-Cola',     'COCA',   COCA_COLA_STICKERS);
+  addSpecial('intro',  'Introducción',                  'INTRO',  INTRO_STICKERS);
+  addSpecial('museum', 'Leyendas · campeones históricos', 'MUSEUM', MUSEUM_STICKERS);
+  addSpecial('coca',   'Colección especial',            'COCA',   COCA_COLA_STICKERS);
 
   // Secciones por equipo
   teams.forEach((team, ti) => {

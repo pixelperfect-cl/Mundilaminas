@@ -12,6 +12,7 @@
   const LS_API = 'wc26-api';
   const LS_GID = 'wc26-gid';
   const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
+  const LS_DISCLAIMER = 'wc26-disclaimer-ack';  // ya vio el aviso "app no oficial" (primer arranque)
 
   // Configuración de la nube. Por defecto la API vive en el MISMO origen que
   // la app (mismo dominio/cert) — ver apiBase(). Así funciona en cualquier
@@ -602,6 +603,44 @@
     toast('Sesión cerrada');
   }
 
+  // Borra la cuenta y TODOS los datos del servidor (cascada), y limpia el
+  // dispositivo. Cumple el requisito de "eliminación de cuenta" de Google Play.
+  async function deleteAccount() {
+    if (!loggedIn()) { toast('Inicia sesión primero'); return; }
+    const ok = await confirmDialog(
+      'Esto borra tu cuenta y TODOS tus datos del servidor: tu colección, tus amigos y tus avisos. No se puede deshacer. ¿Seguro?',
+      { ok: 'Borrar mi cuenta', cancel: 'Cancelar', danger: true }
+    );
+    if (!ok) return;
+    try {
+      await api('/me', { method: 'DELETE' });
+    } catch (e) { toast(e.message || 'No se pudo borrar la cuenta'); return; }
+    // Borrado OK en el servidor: desuscribir push y limpiar el dispositivo.
+    try { const sub = await currentPushSub(); if (sub) { try { await sub.unsubscribe(); } catch (e) {} } } catch (e) {}
+    clearSession();
+    stopNotifPolling();
+    setBadge(0);
+    counts = {}; dirty = new Set();
+    localStorage.removeItem(LS_COUNTS);
+    localStorage.removeItem(LS_DIRTY);
+    localStorage.removeItem(LS_COUNTS_OWNER);
+    album = CFG.buildAlbum(teams);
+    rebuildSidMaps();
+    if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+    closeModals();
+    render();
+    toast('Tu cuenta y tus datos fueron borrados');
+  }
+
+  // Aviso "app no oficial" en el primer arranque (una sola vez).
+  function maybeShowDisclaimer() {
+    try { if (localStorage.getItem(LS_DISCLAIMER)) return; } catch {}
+    const m = el('modalDisclaimer');
+    if (!m) return;
+    try { localStorage.setItem(LS_DISCLAIMER, '1'); } catch {}   // marcar visto: no reaparece
+    m.classList.add('open');
+  }
+
   async function syncAfterLogin() {
     try {
       const data = await api('/me');
@@ -929,6 +968,7 @@
     }
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
+    show('btnDeleteAccount', loggedIn()); show('deleteAccountHint', loggedIn());
     if (!loggedIn()) setBadge(0);
     refreshPushButton();
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
@@ -1113,6 +1153,8 @@
     on('btnPush', 'click', togglePush);
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
+    on('btnDeleteAccount', 'click', deleteAccount);
+    on('btnDisclaimerOk', 'click', () => { const m = el('modalDisclaimer'); if (m) m.classList.remove('open'); });
     on('addFriendBtn', 'click', addFriend);
     on('inviteWhatsapp', 'click', inviteWhatsApp);
     on('copyCode', 'click', () => copyText(me ? '@' + me.handle : ''));
@@ -1158,6 +1200,7 @@
   render();
   updateCloudUI();
   showView('home');   // landing = Inicio (dashboard)
+  maybeShowDisclaimer();   // aviso "app no oficial" (una sola vez)
   // El script de Google es async: apenas cargue, inicializa y pinta el botón
   // del gate (login obligatorio). Robusto aunque cargue después del 'load'.
   whenGoogleReady(() => { initGoogle(); updateGate(); });

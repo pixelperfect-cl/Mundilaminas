@@ -8,6 +8,7 @@
  *   POST /auth/google            → { id_token } → { token, user }
  *   GET  /me                     → perfil + colección { counts }
  *   PUT  /me/collection          → { counts: { sid: qty } }  (delta)
+ *   DELETE /me                   → borra la cuenta y todos sus datos (cascada)
  *   POST /friends/request        → { handle } o { email }
  *   POST /friends/accept         → { handle }
  *   GET  /friends                → amigos (con nº de coincidencias) + solicitudes
@@ -104,6 +105,18 @@ if ($method === 'PUT' && $path === 'me/collection') {
   }
   $pdo->commit();
   json_out(['ok' => true, 'saved' => count($counts)]);
+}
+
+// ---------- Borrar mi cuenta y todos mis datos (irreversible) ----------
+// Cumple el requisito de "eliminación de cuenta" de Google Play. El borrado
+// del usuario cae en cascada (ON DELETE CASCADE) sobre collection, friendships
+// (ambas direcciones), notifications (ambas) y push_subscriptions.
+if ($method === 'DELETE' && $path === 'me') {
+  $me  = require_user();
+  $pdo = db();
+  $d = $pdo->prepare('DELETE FROM users WHERE id = ?');
+  $d->execute([$me['uid']]);
+  json_out(['ok' => true, 'deleted' => true]);
 }
 
 // ---------- Solicitar amistad (por código @handle o por correo) ----------
@@ -300,7 +313,7 @@ if ($method === 'POST' && $path === 'push/subscribe') {
     send_push_to_user($pdo, $me['uid'], [
       'title' => '🔔 Avisos activados',
       'body'  => 'Te avisaremos cuando un amigo tenga láminas que te faltan.',
-      'url'   => 'https://pixelperfect-cl.github.io/Mundilaminas/',
+      'url'   => '/index.html',
     ]);
   } catch (\Throwable $e) { /* el alta igual fue exitosa */ }
   json_out(['ok' => true]);

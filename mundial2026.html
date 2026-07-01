@@ -626,6 +626,23 @@ body.gated { overflow: hidden; }
 .about-log li { font-size: .85rem; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
 .about-log a, .about-story a { color: var(--accent-2); font-weight: 700; }
 
+/* Disclaimer "app no oficial" (Acerca de + modal de primer arranque) */
+.disclaimer-box {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: rgba(246, 201, 69, .10);
+  border: 1px solid rgba(246, 201, 69, .35);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.disclaimer-box b { color: var(--gold); }
+/* El aviso de primer arranque debe quedar POR ENCIMA de la landing (z-index:100). */
+#modalDisclaimer { z-index: 110; }
+/* Disclaimer en la landing (footer) */
+.lp-disclaimer { margin-top: 10px !important; color: var(--muted); font-size: var(--fs-xs) !important; opacity: .9; }
+
 </style>
 </head>
 <body>
@@ -644,7 +661,7 @@ body.gated { overflow: hidden; }
         <h1 class="lp-brand"><span class="lp-foil-text">Mundiláminas</span></h1>
         <p class="lp-sub">Álbum del Mundial 2026</p>
         <p class="lp-tagline">Junta, cambia y completa tu álbum del Mundial — <b>gratis</b> y sin una sola publicidad.</p>
-        <p class="lp-trust-row">✓ 100% gratis&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin publicidad&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin fines de lucro</p>
+        <p class="lp-trust-row">✓ 100% gratis&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin publicidad&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin compras</p>
         <div class="lp-cta">
           <p class="lp-cta-lead">Crea tu álbum gratis en un toque</p>
           <div class="gate-btn" id="gateBtn"></div>
@@ -673,8 +690,10 @@ body.gated { overflow: hidden; }
 
       <footer class="lp-foot">
         <button class="lp-cta-up" id="lpStart">⚽ Empezar gratis</button>
-        <p>Hecho por un papá para su hijo —y para todos los que están llenando el álbum—. Sin fines comerciales.</p>
+        <p>Hecho por un papá para su hijo —y para todos los que están llenando el álbum—. Un proyecto personal, sin publicidad.</p>
         <p>¿Ideas o problemas? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
+        <p class="lp-disclaimer">App no oficial. No afiliada, respaldada ni patrocinada por FIFA ni Panini.</p>
+        <p class="lp-legal"><a href="/privacidad.html">Política de privacidad</a> · <a href="/eliminar-cuenta.html">Eliminar cuenta</a></p>
       </footer>
 
     </div>
@@ -759,6 +778,10 @@ body.gated { overflow: hidden; }
         <button class="act-share" id="btnLogin">Iniciar sesión con Google</button>
         <button class="act-import" id="btnLogout" style="display:none">Cerrar sesión</button>
       </div>
+      <div class="modal-actions">
+        <button class="act-danger" id="btnDeleteAccount" style="display:none">🗑️ Borrar mi cuenta y datos</button>
+      </div>
+      <p class="hint" id="deleteAccountHint" style="display:none">Elimina de forma permanente tu cuenta, tu colección, tus amigos y tus avisos del servidor. No se puede deshacer. <a href="/eliminar-cuenta.html">Más info</a></p>
 
       <h2 style="font-size:1rem;margin-top:18px">💾 Respaldo</h2>
       <p class="hint">Tus datos se guardan en este navegador. Descarga un respaldo para no perderlos o pasarlos a otro teléfono.</p>
@@ -843,7 +866,11 @@ body.gated { overflow: hidden; }
     <div class="modal">
       <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>⚽ Acerca de Mundiláminas</h2>
-      <p class="hint">Mundial 2026 · Mis Láminas — gratis, sin publicidad y sin fines comerciales.</p>
+      <p class="hint">Mundiláminas — gratis, sin publicidad. Un proyecto personal, sin monetización.</p>
+
+      <div class="disclaimer-box">
+        <b>⚠️ App no oficial.</b> Mundiláminas no está afiliada, respaldada ni patrocinada por FIFA ni por Panini, ni por ninguna entidad organizadora o licenciataria del mundial de fútbol 2026. No incluye ni reproduce emblemas, escudos, mascotas, camisetas ni imágenes de la colección: solo administra números y nombres en texto. Las marcas mencionadas pertenecen a sus respectivos titulares y se usan solo con fines descriptivos.
+      </div>
 
       <h2 style="font-size:1rem;margin-top:14px">La historia</h2>
       <div class="about-story">
@@ -864,6 +891,20 @@ body.gated { overflow: hidden; }
 
       <h2 style="font-size:1rem;margin-top:18px">Contacto</h2>
       <p class="hint">¿Ideas, problemas o solo saludar? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
+      <p class="hint"><a href="/privacidad.html">Política de privacidad</a> · <a href="/eliminar-cuenta.html">Eliminar cuenta</a></p>
+    </div>
+  </div>
+
+  <!-- Modal: aviso de app no oficial (primer arranque, se muestra una vez) -->
+  <div class="modal-back" id="modalDisclaimer">
+    <div class="modal">
+      <h2>⚽ Bienvenido a Mundiláminas</h2>
+      <div class="disclaimer-box">
+        <b>⚠️ App no oficial.</b> Mundiláminas es un proyecto independiente para llevar tu álbum del mundial de fútbol 2026. <b>No está afiliada, respaldada ni patrocinada por FIFA ni por Panini</b>, ni por ninguna entidad organizadora o licenciataria. No incluye ni reproduce emblemas, escudos, mascotas, camisetas ni imágenes de la colección: solo administra números y nombres en texto que puedes editar.
+      </div>
+      <div class="modal-actions">
+        <button class="act-share" id="btnDisclaimerOk">Entendido, continuar</button>
+      </div>
     </div>
   </div>
 
@@ -872,18 +913,19 @@ body.gated { overflow: hidden; }
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
 /*
- * Álbum Panini FIFA World Cup 2026 — estructura de la colección.
+ * Estructura de la colección de láminas del mundial de fútbol 2026.
+ * App NO oficial, sin relación con FIFA ni Panini.
  *
  * Total: 994 láminas
  *   - 9  láminas de Introducción (foil/brillantes)  → FW0, FWC1–FWC8
- *   - 11 láminas FIFA Museum (leyendas)             → FWC9–FWC19
- *   - 14 láminas Colección Coca-Cola (LatAm)        → CC1–CC14
+ *   - 11 láminas de Leyendas (campeones históricos) → FWC9–FWC19
+ *   - 14 láminas de la Colección especial           → CC1–CC14
  *   - 48 equipos × 20 láminas = 960
  *
- * Los 48 equipos y sus grupos (A-L) corresponden al SORTEO FINAL OFICIAL
- * del Mundial 2026 (Washington D.C., 5 dic 2025), con los repechajes ya
- * resueltos. Igual puedes editar cualquier equipo desde la app (botón ✏️)
- * para que calce exactamente con tu álbum físico. La numeración se recalcula sola.
+ * Los 48 equipos y sus grupos (A-L) siguen el sorteo del mundial 2026,
+ * con los repechajes ya resueltos. Igual puedes editar cualquier equipo
+ * desde la app (botón ✏️) para que calce exactamente con tu álbum físico.
+ * La numeración se recalcula sola.
  *
  * Numeración MOSTRADA:
  *   Especiales:  su código impreso (FW0, FWC1–FWC19, CC1–CC14)
@@ -899,18 +941,18 @@ body.gated { overflow: hidden; }
 // código impreso en el álbum (FW0, FWC1…), NO un 1,2,3 correlativo.
 // { code: código impreso, label: qué es }
 const INTRO_STICKERS = [
-  { code: 'FW0',  label: 'Logo Panini' },
-  { code: 'FWC1', label: 'Copa (parte superior)' },
-  { code: 'FWC2', label: 'Copa (parte inferior)' },
-  { code: 'FWC3', label: 'Mascotas (Maple · Zayu · Clutch)' },
-  { code: 'FWC4', label: 'Eslogan oficial' },
-  { code: 'FWC5', label: 'Balón oficial (Trionda)' },
+  { code: 'FW0',  label: 'Portada (foil)' },
+  { code: 'FWC1', label: 'Trofeo (parte superior)' },
+  { code: 'FWC2', label: 'Trofeo (parte inferior)' },
+  { code: 'FWC3', label: 'Mascotas del torneo' },
+  { code: 'FWC4', label: 'Eslogan' },
+  { code: 'FWC5', label: 'Balón' },
   { code: 'FWC6', label: 'Sede: Canadá' },
   { code: 'FWC7', label: 'Sede: México' },
   { code: 'FWC8', label: 'Sede: Estados Unidos' },
 ];
 
-// 11 láminas FIFA Museum (campeones históricos), códigos FWC9–FWC19.
+// 11 láminas de Leyendas (campeones históricos), códigos FWC9–FWC19.
 // OJO: los rótulos son los CAMPEONES por año; si tu álbum los nombra por
 // SEDE+año (Suiza 1954, Chile 1962…) se cambian solo textos, mismos sids.
 const MUSEUM_STICKERS = [
@@ -927,7 +969,7 @@ const MUSEUM_STICKERS = [
   { code: 'FWC19', label: 'Argentina 2022' },
 ];
 
-// 14 láminas de la Colección Coca-Cola (edición Latinoamérica), códigos CC1–CC14.
+// 14 láminas de la Colección especial (edición Latinoamérica), códigos CC1–CC14.
 // OJO: los 14 nombres están confirmados; el orden exacto CC1..CC14 puede ajustarse.
 const COCA_COLA_STICKERS = [
   { code: 'CC1',  label: 'Lamine Yamal (España)' },
@@ -946,7 +988,7 @@ const COCA_COLA_STICKERS = [
   { code: 'CC14', label: 'Lautaro Martínez (Argentina)' },
 ];
 
-// 48 equipos en el MISMO ORDEN del álbum físico Panini FIFA World Cup 2026,
+// 48 equipos en el MISMO ORDEN del álbum físico del mundial 2026,
 // con la PÁGINA en que empieza cada selección. EDITABLE desde la app.
 // Cada objeto: { group, name, code, page }
 const TEAMS = [
@@ -1103,9 +1145,9 @@ function buildAlbum(teams) {
     });
     sections.push(sec);
   }
-  addSpecial('intro',  'Introducción',            'INTRO',  INTRO_STICKERS);
-  addSpecial('museum', 'FIFA Museum (Leyendas)',  'MUSEUM', MUSEUM_STICKERS);
-  addSpecial('coca',   'Colección Coca-Cola',     'COCA',   COCA_COLA_STICKERS);
+  addSpecial('intro',  'Introducción',                  'INTRO',  INTRO_STICKERS);
+  addSpecial('museum', 'Leyendas · campeones históricos', 'MUSEUM', MUSEUM_STICKERS);
+  addSpecial('coca',   'Colección especial',            'COCA',   COCA_COLA_STICKERS);
 
   // Secciones por equipo
   teams.forEach((team, ti) => {
@@ -1176,6 +1218,7 @@ window.ALBUM_CONFIG = {
   const LS_API = 'wc26-api';
   const LS_GID = 'wc26-gid';
   const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
+  const LS_DISCLAIMER = 'wc26-disclaimer-ack';  // ya vio el aviso "app no oficial" (primer arranque)
 
   // Configuración de la nube. Por defecto la API vive en el MISMO origen que
   // la app (mismo dominio/cert) — ver apiBase(). Así funciona en cualquier
@@ -1766,6 +1809,44 @@ window.ALBUM_CONFIG = {
     toast('Sesión cerrada');
   }
 
+  // Borra la cuenta y TODOS los datos del servidor (cascada), y limpia el
+  // dispositivo. Cumple el requisito de "eliminación de cuenta" de Google Play.
+  async function deleteAccount() {
+    if (!loggedIn()) { toast('Inicia sesión primero'); return; }
+    const ok = await confirmDialog(
+      'Esto borra tu cuenta y TODOS tus datos del servidor: tu colección, tus amigos y tus avisos. No se puede deshacer. ¿Seguro?',
+      { ok: 'Borrar mi cuenta', cancel: 'Cancelar', danger: true }
+    );
+    if (!ok) return;
+    try {
+      await api('/me', { method: 'DELETE' });
+    } catch (e) { toast(e.message || 'No se pudo borrar la cuenta'); return; }
+    // Borrado OK en el servidor: desuscribir push y limpiar el dispositivo.
+    try { const sub = await currentPushSub(); if (sub) { try { await sub.unsubscribe(); } catch (e) {} } } catch (e) {}
+    clearSession();
+    stopNotifPolling();
+    setBadge(0);
+    counts = {}; dirty = new Set();
+    localStorage.removeItem(LS_COUNTS);
+    localStorage.removeItem(LS_DIRTY);
+    localStorage.removeItem(LS_COUNTS_OWNER);
+    album = CFG.buildAlbum(teams);
+    rebuildSidMaps();
+    if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+    closeModals();
+    render();
+    toast('Tu cuenta y tus datos fueron borrados');
+  }
+
+  // Aviso "app no oficial" en el primer arranque (una sola vez).
+  function maybeShowDisclaimer() {
+    try { if (localStorage.getItem(LS_DISCLAIMER)) return; } catch {}
+    const m = el('modalDisclaimer');
+    if (!m) return;
+    try { localStorage.setItem(LS_DISCLAIMER, '1'); } catch {}   // marcar visto: no reaparece
+    m.classList.add('open');
+  }
+
   async function syncAfterLogin() {
     try {
       const data = await api('/me');
@@ -2093,6 +2174,7 @@ window.ALBUM_CONFIG = {
     }
     const show = (id, on) => { const e = el(id); if (e) e.style.display = on ? '' : 'none'; };
     show('btnLogin', !loggedIn()); show('gbtn', !loggedIn()); show('btnLogout', loggedIn());
+    show('btnDeleteAccount', loggedIn()); show('deleteAccountHint', loggedIn());
     if (!loggedIn()) setBadge(0);
     refreshPushButton();
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
@@ -2277,6 +2359,8 @@ window.ALBUM_CONFIG = {
     on('btnPush', 'click', togglePush);
     on('btnLogin', 'click', promptGoogle);
     on('btnLogout', 'click', doLogout);
+    on('btnDeleteAccount', 'click', deleteAccount);
+    on('btnDisclaimerOk', 'click', () => { const m = el('modalDisclaimer'); if (m) m.classList.remove('open'); });
     on('addFriendBtn', 'click', addFriend);
     on('inviteWhatsapp', 'click', inviteWhatsApp);
     on('copyCode', 'click', () => copyText(me ? '@' + me.handle : ''));
@@ -2322,6 +2406,7 @@ window.ALBUM_CONFIG = {
   render();
   updateCloudUI();
   showView('home');   // landing = Inicio (dashboard)
+  maybeShowDisclaimer();   // aviso "app no oficial" (una sola vez)
   // El script de Google es async: apenas cargue, inicializa y pinta el botón
   // del gate (login obligatorio). Robusto aunque cargue después del 'load'.
   whenGoogleReady(() => { initGoogle(); updateGate(); });

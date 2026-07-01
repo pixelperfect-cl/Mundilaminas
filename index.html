@@ -48,7 +48,7 @@
         <h1 class="lp-brand"><span class="lp-foil-text">Mundiláminas</span></h1>
         <p class="lp-sub">Álbum del Mundial 2026</p>
         <p class="lp-tagline">Junta, cambia y completa tu álbum del Mundial — <b>gratis</b> y sin una sola publicidad.</p>
-        <p class="lp-trust-row">✓ 100% gratis&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin publicidad&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin fines de lucro</p>
+        <p class="lp-trust-row">✓ 100% gratis&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin publicidad&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin compras</p>
         <div class="lp-cta">
           <p class="lp-cta-lead">Crea tu álbum gratis en un toque</p>
           <div class="gate-btn" id="gateBtn"></div>
@@ -77,9 +77,10 @@
 
       <footer class="lp-foot">
         <button class="lp-cta-up" id="lpStart">⚽ Empezar gratis</button>
-        <p>Hecho por un papá para su hijo —y para todos los que están llenando el álbum—. Sin fines comerciales.</p>
+        <p>Hecho por un papá para su hijo —y para todos los que están llenando el álbum—. Un proyecto personal, sin publicidad.</p>
         <p>¿Ideas o problemas? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
-        <p class="lp-legal"><a href="/privacidad.html">Política de privacidad</a></p>
+        <p class="lp-disclaimer">App no oficial. No afiliada, respaldada ni patrocinada por FIFA ni Panini.</p>
+        <p class="lp-legal"><a href="/privacidad.html">Política de privacidad</a> · <a href="/eliminar-cuenta.html">Eliminar cuenta</a></p>
       </footer>
 
     </div>
@@ -164,6 +165,10 @@
         <button class="act-share" id="btnLogin">Iniciar sesión con Google</button>
         <button class="act-import" id="btnLogout" style="display:none">Cerrar sesión</button>
       </div>
+      <div class="modal-actions">
+        <button class="act-danger" id="btnDeleteAccount" style="display:none">🗑️ Borrar mi cuenta y datos</button>
+      </div>
+      <p class="hint" id="deleteAccountHint" style="display:none">Elimina de forma permanente tu cuenta, tu colección, tus amigos y tus avisos del servidor. No se puede deshacer. <a href="/eliminar-cuenta.html">Más info</a></p>
 
       <h2 style="font-size:1rem;margin-top:18px">💾 Respaldo</h2>
       <p class="hint">Tus datos se guardan en este navegador. Descarga un respaldo para no perderlos o pasarlos a otro teléfono.</p>
@@ -248,7 +253,11 @@
     <div class="modal">
       <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
       <h2>⚽ Acerca de Mundiláminas</h2>
-      <p class="hint">Mundial 2026 · Mis Láminas — gratis, sin publicidad y sin fines comerciales.</p>
+      <p class="hint">Mundiláminas — gratis, sin publicidad. Un proyecto personal, sin monetización.</p>
+
+      <div class="disclaimer-box">
+        <b>⚠️ App no oficial.</b> Mundiláminas no está afiliada, respaldada ni patrocinada por FIFA ni por Panini, ni por ninguna entidad organizadora o licenciataria del mundial de fútbol 2026. No incluye ni reproduce emblemas, escudos, mascotas, camisetas ni imágenes de la colección: solo administra números y nombres en texto. Las marcas mencionadas pertenecen a sus respectivos titulares y se usan solo con fines descriptivos.
+      </div>
 
       <h2 style="font-size:1rem;margin-top:14px">La historia</h2>
       <div class="about-story">
@@ -269,7 +278,20 @@
 
       <h2 style="font-size:1rem;margin-top:18px">Contacto</h2>
       <p class="hint">¿Ideas, problemas o solo saludar? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
-      <p class="hint"><a href="/privacidad.html">Política de privacidad</a></p>
+      <p class="hint"><a href="/privacidad.html">Política de privacidad</a> · <a href="/eliminar-cuenta.html">Eliminar cuenta</a></p>
+    </div>
+  </div>
+
+  <!-- Modal: aviso de app no oficial (primer arranque, se muestra una vez) -->
+  <div class="modal-back" id="modalDisclaimer">
+    <div class="modal">
+      <h2>⚽ Bienvenido a Mundiláminas</h2>
+      <div class="disclaimer-box">
+        <b>⚠️ App no oficial.</b> Mundiláminas es un proyecto independiente para llevar tu álbum del mundial de fútbol 2026. <b>No está afiliada, respaldada ni patrocinada por FIFA ni por Panini</b>, ni por ninguna entidad organizadora o licenciataria. No incluye ni reproduce emblemas, escudos, mascotas, camisetas ni imágenes de la colección: solo administra números y nombres en texto que puedes editar.
+      </div>
+      <div class="modal-actions">
+        <button class="act-share" id="btnDisclaimerOk">Entendido, continuar</button>
+      </div>
     </div>
   </div>
 

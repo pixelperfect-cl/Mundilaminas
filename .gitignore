@@ -1,0 +1,12 @@
+# === Secretos de firma / Play Store — NUNCA commitear ===
+# El keystore firma la app; si se filtra, alguien puede publicar apps falsas con tu identidad.
+# Copia maestra vive en la carpeta hermana secrets\ (fuera del repo tras la reorganizacion).
+/secrets/
+*.keystore
+*.jks
+signing-key-info.txt
+
+# === Artefactos de build TWA (no son secretos, pero no van en git) ===
+*.aab
+*.apk
+Mundiláminas - Google Play package.zip

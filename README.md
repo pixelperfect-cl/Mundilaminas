@@ -1,7 +1,7 @@
-# ⚽ Mundial 2026 · Mis Láminas
+# ⚽ Mundiláminas
 
-App simple y **standalone** (sin login, sin internet) para llevar el control de tu
-álbum **Panini FIFA World Cup 2026 Official Sticker Collection**: marca qué láminas
+App **no oficial** (sin relación con FIFA ni Panini) para llevar el control de tu
+álbum de láminas del **mundial de fútbol 2026**: marca qué láminas
 tienes, cuántas repetidas, y genera las listas de **lo que te falta** y **tus repetidas**
 para cambiar con amigos.
 
@@ -30,13 +30,13 @@ No necesita instalación ni servidor. Abre `index.html` en el navegador del tel�
 | Sección        | Láminas | Números   |
 |----------------|---------|-----------|
 | Introducción   | 9       | 1 – 9     |
-| FIFA Museum    | 11      | 10 – 20   |
+| Leyendas       | 11      | 10 – 20   |
 | 48 equipos     | 960     | 21 – 980  |
 
 Cada equipo trae 20 láminas: **escudo** (✨ brillante), **plantel**, y **18 jugadores**.
 
-> ✅ **Equipos y grupos**: corresponden al **sorteo final oficial** del Mundial 2026
-> (Washington D.C., 5 dic 2025) con los repechajes ya resueltos. Si algo no calza con
+> ✅ **Equipos y grupos**: siguen el **sorteo del mundial 2026** con los repechajes
+> ya resueltos. Si algo no calza con
 > tu álbum físico, lo corriges desde **⚙️ Menú → Editar equipos** (la numeración se
 > recalcula sola y tus marcas se conservan).
 

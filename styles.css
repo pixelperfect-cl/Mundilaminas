@@ -592,3 +592,20 @@ body.gated { overflow: hidden; }
 .about-log { margin: 6px 0 0; padding-left: 18px; }
 .about-log li { font-size: .85rem; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
 .about-log a, .about-story a { color: var(--accent-2); font-weight: 700; }
+
+/* Disclaimer "app no oficial" (Acerca de + modal de primer arranque) */
+.disclaimer-box {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: rgba(246, 201, 69, .10);
+  border: 1px solid rgba(246, 201, 69, .35);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.disclaimer-box b { color: var(--gold); }
+/* El aviso de primer arranque debe quedar POR ENCIMA de la landing (z-index:100). */
+#modalDisclaimer { z-index: 110; }
+/* Disclaimer en la landing (footer) */
+.lp-disclaimer { margin-top: 10px !important; color: var(--muted); font-size: var(--fs-xs) !important; opacity: .9; }

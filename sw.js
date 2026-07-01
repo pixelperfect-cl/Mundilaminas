@@ -1,4 +1,4 @@
-/* Service Worker — Mundial 2026 · Mis Láminas (Web Push) */
+/* Service Worker — Mundiláminas (Web Push) */
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
@@ -9,12 +9,12 @@ self.addEventListener('push', (event) => {
   try { data = event.data ? event.data.json() : {}; }
   catch (e) { data = { body: event.data ? event.data.text() : '' }; }
 
-  const title = data.title || 'Mundial 2026 · Mis Láminas';
+  const title = data.title || 'Mundiláminas';
   const options = {
     body: data.body || '',
     icon: 'icon-192.png',
     badge: 'icon-192.png',
-    data: { url: data.url || './' },
+    data: { url: data.url || '/index.html' },
     vibrate: [80, 40, 80],
     tag: 'mundilaminas-match',
     renotify: true,
@@ -25,7 +25,7 @@ self.addEventListener('push', (event) => {
 // Tocar la notificación: enfocar la app abierta o abrirla.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || './';
+  const url = (event.notification.data && event.notification.data.url) || '/index.html';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const c of list) {

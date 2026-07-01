@@ -106,7 +106,8 @@
     if (filter === 'repe' && c < 2) return false;
     if (search) {
       const q = search.toLowerCase();
-      if (!String(s.disp).includes(q) && !s.label.toLowerCase().includes(q) &&
+      if (!String(s.disp).includes(q) && !(s.code || '').toLowerCase().includes(q) &&
+          !s.label.toLowerCase().includes(q) &&
           !s.sectionTitle.toLowerCase().includes(q) &&
           !(s.aka || '').includes(q)) return false;
     }
@@ -177,7 +178,7 @@
     const repes = c >= 2 ? c - 1 : 0;
     div.innerHTML = `
       ${repes > 0 ? `<span class="badge-repe">+${repes}</span>` : ''}
-      <div class="num">#${s.disp}</div>
+      <div class="num">${escapeHtml(s.code || ('#' + s.disp))}</div>
       <div class="lbl">${escapeHtml(s.label)}</div>
       <div class="ctrl">
         <button class="minus" aria-label="quitar">−</button>
@@ -226,6 +227,13 @@
     const flag = CFG.flagFor ? CFG.flagFor(section.code) : '';
     const pg = section.page ? ` (pág. ${section.page})` : '';
     return `${flag ? flag + ' ' : ''}Grupo ${section.group} · ${section.teamName}${pg}`;
+  }
+
+  // Cómo se muestra/comparte una lámina: código impreso (FWC1, CC3…) o "#num".
+  function stickerCode(s) { return s.code || ('#' + s.disp); }
+  // Lista de especiales ordenada por su número interno, mostrando el código.
+  function codeList(items) {
+    return [...items].sort((a, b) => a.disp - b.disp).map(stickerCode).join(', ');
   }
 
   // Comprime números consecutivos en rangos: [1,2,3,5,8,9] -> "#1-3, #5, #8-9".
@@ -281,7 +289,7 @@
       collect: (section) => {
         const miss = section.stickers.filter((s) => getCount(s.key) === 0);
         if (!miss.length) return null;
-        const body = rangeStr(miss.map((s) => s.disp));
+        const body = section.kind === 'team' ? rangeStr(miss.map((s) => s.disp)) : codeList(miss);
         const all = miss.length === section.stickers.length;
         return { count: miss.length, body: all ? `todas (${body})` : body };
       },
@@ -309,11 +317,15 @@
       emptyMsg: 'Aún no tengo repetidas para cambiar.',
       collect: (section) => {
         const reps = section.stickers
-          .map((s) => ({ disp: Number(s.disp), extra: Math.max(0, getCount(s.key) - 1) }))
+          .map((s) => ({ s, disp: Number(s.disp), extra: Math.max(0, getCount(s.key) - 1) }))
           .filter((x) => x.extra > 0);
         if (!reps.length) return null;
         const count = reps.reduce((a, x) => a + x.extra, 0);
-        return { count, body: repeStr(reps) };
+        const body = section.kind === 'team'
+          ? repeStr(reps)
+          : [...reps].sort((a, b) => a.disp - b.disp)
+              .map((x) => `${stickerCode(x.s)}${x.extra > 1 ? ` (x${x.extra})` : ''}`).join(', ');
+        return { count, body };
       },
     });
   }
@@ -743,7 +755,7 @@
     const lines = [header + ' (' + sids.length + '):'];
     album.sections.forEach((sec) => {
       const list = bySection[sec.id]; if (!list) return;
-      lines.push(sectionLabel(sec) + ': ' + rangeStr(list.map((s) => s.disp)));
+      lines.push(sectionLabel(sec) + ': ' + (sec.kind === 'team' ? rangeStr(list.map((s) => s.disp)) : codeList(list)));
     });
     return lines.join('\n');
   }

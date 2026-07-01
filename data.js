@@ -1,9 +1,10 @@
 /*
  * Álbum Panini FIFA World Cup 2026 — estructura de la colección.
  *
- * Total: 980 láminas
- *   - 9  láminas de Introducción (foil/brillantes)
- *   - 11 láminas FIFA Museum (leyendas / campeones del pasado)
+ * Total: 994 láminas
+ *   - 9  láminas de Introducción (foil/brillantes)  → FW0, FWC1–FWC8
+ *   - 11 láminas FIFA Museum (leyendas)             → FWC9–FWC19
+ *   - 14 láminas Colección Coca-Cola (LatAm)        → CC1–CC14
  *   - 48 equipos × 20 láminas = 960
  *
  * Los 48 equipos y sus grupos (A-L) corresponden al SORTEO FINAL OFICIAL
@@ -11,10 +12,9 @@
  * resueltos. Igual puedes editar cualquier equipo desde la app (botón ✏️)
  * para que calce exactamente con tu álbum físico. La numeración se recalcula sola.
  *
- * Numeración usada:
- *   Intro:        1 – 9
- *   FIFA Museum: 10 – 20
- *   Equipos:     21 – 980  (cada equipo ocupa 20 números consecutivos)
+ * Numeración MOSTRADA:
+ *   Especiales:  su código impreso (FW0, FWC1–FWC19, CC1–CC14)
+ *   Equipos:     1 – 20 por equipo (escudo=1, foto plantel=13, resto jugadores)
  *
  * Dentro de cada equipo (20 láminas):
  *   slot 1  -> Escudo (brillante)
@@ -22,32 +22,55 @@
  *   slot 3..20 -> Jugadores (18)
  */
 
-// 9 láminas de introducción (brillantes)
+// Láminas de introducción (brillantes/foil). El número que se MUESTRA es el
+// código impreso en el álbum (FW0, FWC1…), NO un 1,2,3 correlativo.
+// { code: código impreso, label: qué es }
 const INTRO_STICKERS = [
-  'Logo Panini',
-  'Emblema oficial',
-  'Mascota La\'eeb / Trío',
-  'Mascotas',
-  'Eslogan oficial',
-  'Balón oficial',
-  'Sede: Estados Unidos',
-  'Sede: México',
-  'Sede: Canadá',
+  { code: 'FW0',  label: 'Logo Panini' },
+  { code: 'FWC1', label: 'Copa (parte superior)' },
+  { code: 'FWC2', label: 'Copa (parte inferior)' },
+  { code: 'FWC3', label: 'Mascotas (Maple · Zayu · Clutch)' },
+  { code: 'FWC4', label: 'Eslogan oficial' },
+  { code: 'FWC5', label: 'Balón oficial (Trionda)' },
+  { code: 'FWC6', label: 'Sede: Canadá' },
+  { code: 'FWC7', label: 'Sede: México' },
+  { code: 'FWC8', label: 'Sede: Estados Unidos' },
 ];
 
-// 11 láminas FIFA Museum (campeones históricos)
+// 11 láminas FIFA Museum (campeones históricos), códigos FWC9–FWC19.
+// OJO: los rótulos son los CAMPEONES por año; si tu álbum los nombra por
+// SEDE+año (Suiza 1954, Chile 1962…) se cambian solo textos, mismos sids.
 const MUSEUM_STICKERS = [
-  'FIFA Museum 1',
-  'FIFA Museum 2',
-  'FIFA Museum 3',
-  'FIFA Museum 4',
-  'FIFA Museum 5',
-  'FIFA Museum 6',
-  'FIFA Museum 7',
-  'FIFA Museum 8',
-  'FIFA Museum 9',
-  'FIFA Museum 10',
-  'FIFA Museum 11',
+  { code: 'FWC9',  label: 'Italia 1934' },
+  { code: 'FWC10', label: 'Uruguay 1950' },
+  { code: 'FWC11', label: 'Alemania FR 1954' },
+  { code: 'FWC12', label: 'Brasil 1962' },
+  { code: 'FWC13', label: 'Alemania FR 1974' },
+  { code: 'FWC14', label: 'Argentina 1986' },
+  { code: 'FWC15', label: 'Brasil 1994' },
+  { code: 'FWC16', label: 'Brasil 2002' },
+  { code: 'FWC17', label: 'Italia 2006' },
+  { code: 'FWC18', label: 'Alemania 2014' },
+  { code: 'FWC19', label: 'Argentina 2022' },
+];
+
+// 14 láminas de la Colección Coca-Cola (edición Latinoamérica), códigos CC1–CC14.
+// OJO: los 14 nombres están confirmados; el orden exacto CC1..CC14 puede ajustarse.
+const COCA_COLA_STICKERS = [
+  { code: 'CC1',  label: 'Lamine Yamal (España)' },
+  { code: 'CC2',  label: 'Joshua Kimmich (Alemania)' },
+  { code: 'CC3',  label: 'Harry Kane (Inglaterra)' },
+  { code: 'CC4',  label: 'Santiago Giménez (México)' },
+  { code: 'CC5',  label: 'Joško Gvardiol (Croacia)' },
+  { code: 'CC6',  label: 'Federico Valverde (Uruguay)' },
+  { code: 'CC7',  label: 'Jefferson Lerma (Colombia)' },
+  { code: 'CC8',  label: 'Enner Valencia (Ecuador)' },
+  { code: 'CC9',  label: 'Gabriel Magalhães (Brasil)' },
+  { code: 'CC10', label: 'Virgil van Dijk (Países Bajos)' },
+  { code: 'CC11', label: 'Alphonso Davies (Canadá)' },
+  { code: 'CC12', label: 'Emiliano Martínez (Argentina)' },
+  { code: 'CC13', label: 'Raúl Jiménez (México)' },
+  { code: 'CC14', label: 'Lautaro Martínez (Argentina)' },
 ];
 
 // 48 equipos en el MISMO ORDEN del álbum físico Panini FIFA World Cup 2026,
@@ -189,23 +212,27 @@ function buildAlbum(teams) {
   const stickers = [];
   let num = 1;
 
-  // Sección Introducción
-  const intro = { id: 'intro', title: 'Introducción', kind: 'special', stickers: [] };
-  INTRO_STICKERS.forEach((label, i) => {
-    const s = { num: num++, disp: i + 1, key: `intro-${i}`, sid: `INTRO-${i + 1}`, label, sectionId: 'intro', sectionTitle: 'Introducción' };
-    intro.stickers.push(s);
-    stickers.push(s);
-  });
-  sections.push(intro);
-
-  // Sección FIFA Museum
-  const museum = { id: 'museum', title: 'FIFA Museum (Leyendas)', kind: 'special', stickers: [] };
-  MUSEUM_STICKERS.forEach((label, i) => {
-    const s = { num: num++, disp: i + 1, key: `museum-${i}`, sid: `MUSEUM-${i + 1}`, label, sectionId: 'museum', sectionTitle: 'FIFA Museum' };
-    museum.stickers.push(s);
-    stickers.push(s);
-  });
-  sections.push(museum);
+  // Secciones especiales (no-equipo). Cada entrada es { code, label }; el sid
+  // estable es <PREFIX>-<n> POSICIONAL (no cambia al renombrar). `disp` sigue
+  // siendo numérico (1..N) para ordenar/comprimir rangos; lo que se MUESTRA es
+  // `code` (FW0, FWC1, CC1…).
+  function addSpecial(id, title, prefix, entries) {
+    const sec = { id, title, kind: 'special', stickers: [] };
+    entries.forEach((e, i) => {
+      const s = {
+        num: num++, disp: i + 1, code: e.code,
+        key: `${id}-${i}`, sid: `${prefix}-${i + 1}`,
+        label: e.label, sectionId: id, sectionTitle: title,
+        aka: (e.code || '').toLowerCase(),
+      };
+      sec.stickers.push(s);
+      stickers.push(s);
+    });
+    sections.push(sec);
+  }
+  addSpecial('intro',  'Introducción',            'INTRO',  INTRO_STICKERS);
+  addSpecial('museum', 'FIFA Museum (Leyendas)',  'MUSEUM', MUSEUM_STICKERS);
+  addSpecial('coca',   'Colección Coca-Cola',     'COCA',   COCA_COLA_STICKERS);
 
   // Secciones por equipo
   teams.forEach((team, ti) => {
@@ -252,9 +279,10 @@ function buildAlbum(teams) {
 window.ALBUM_CONFIG = {
   INTRO_STICKERS,
   MUSEUM_STICKERS,
+  COCA_COLA_STICKERS,
   DEFAULT_TEAMS: TEAMS,
   STICKERS_PER_TEAM,
   buildAlbum,
   flagFor,
-  TOTAL: INTRO_STICKERS.length + MUSEUM_STICKERS.length + TEAMS.length * STICKERS_PER_TEAM,
+  TOTAL: INTRO_STICKERS.length + MUSEUM_STICKERS.length + COCA_COLA_STICKERS.length + TEAMS.length * STICKERS_PER_TEAM,
 };

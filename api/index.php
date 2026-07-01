@@ -325,7 +325,7 @@ if ($method === 'POST' && $path === 'push/unsubscribe') {
 if ($method === 'GET' && $path === 'admin/stats') {
   require_admin();
   $pdo = db();
-  $TOTAL = 980;   // láminas del álbum (coincide con data.js)
+  $TOTAL = 994;   // láminas del álbum (coincide con data.js: 9 intro + 11 museum + 14 coca + 960 equipos)
   $q = fn($sql) => $pdo->query($sql)->fetchColumn();
   $st = [];
 

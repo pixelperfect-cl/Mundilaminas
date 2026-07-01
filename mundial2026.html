@@ -1088,10 +1088,11 @@ window.ALBUM_CONFIG = {
   const LS_GID = 'wc26-gid';
   const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
 
-  // Configuración de la nube. Estos valores por defecto se rellenan una vez
-  // (al desplegar): URL de la API en Cloudways y Client ID de Google.
-  // También se pueden setear desde el menú (se guardan en localStorage).
-  const DEFAULT_API_BASE = 'https://phpstack-1279051-6519515.cloudwaysapps.com';
+  // Configuración de la nube. Por defecto la API vive en el MISMO origen que
+  // la app (mismo dominio/cert) — ver apiBase(). Así funciona en cualquier
+  // dominio (mundilaminas.cl, el temporal de Cloudways, etc.) sin CORS ni URLs
+  // hardcodeadas. Igual se puede forzar otra URL desde el menú (localStorage).
+  const DEFAULT_API_BASE = '';
   const DEFAULT_CLIENT_ID = '598312536196-siqndl4beehru3lnvp6vlqica4ufc27m.apps.googleusercontent.com';
   // Clave pública VAPID para Web Push (la privada vive solo en el server).
   const PUSH_VAPID_PUBLIC = 'BAVsswPfELLnzsdNvZgX3P5T0FCHcJ03FNNRDOR6Eqzl5m8huHpJrfZv1Goo18pcYn0GUzZhgFqkcW-W32RdocI';
@@ -1561,7 +1562,14 @@ window.ALBUM_CONFIG = {
   let currentView = 'home';
   let lastFriends = { friends: [], incoming: [] };
 
-  function apiBase() { return (localStorage.getItem(LS_API) || DEFAULT_API_BASE || '').replace(/\/+$/, ''); }
+  function apiBase() {
+    let b = (localStorage.getItem(LS_API) || DEFAULT_API_BASE || '').replace(/\/+$/, '');
+    // Same-origin por defecto + auto-reparación: si está vacío o quedó apuntando
+    // al dominio temporal viejo de Cloudways (cuyo cert quedó inválido al conectar
+    // el dominio propio), usar el origen actual — siempre tiene cert válido y sin CORS.
+    if (!b || /\.cloudwaysapps\.com/i.test(b)) b = window.location.origin;
+    return b;
+  }
   function clientId() { return localStorage.getItem(LS_GID) || DEFAULT_CLIENT_ID || ''; }
   function cloudConfigured() { return !!apiBase(); }
   function loggedIn() { return !!authToken && !!me; }

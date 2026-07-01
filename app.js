@@ -982,7 +982,7 @@
   // ==========   DASHBOARD / INICIO + navegación de vistas   ==========
   // ===================================================================
   function setNavActive(id) {
-    ['btnHome'].forEach((x) => {
+    ['btnHome', 'btnAlbum'].forEach((x) => {
       const b = el(x); if (!b) return;
       const on = x === id;
       b.classList.toggle('active', on);
@@ -1146,6 +1146,7 @@
     // Nube / amigos
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnHome', 'click', () => showView('home'));
+    on('btnAlbum', 'click', () => showView('album'));
     on('btnLists', 'click', openLists);
     on('hdrAvatar', 'click', openMenu);
     on('btnFriends', 'click', openFriends);

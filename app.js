@@ -1205,11 +1205,25 @@
   // El script de Google es async: apenas cargue, inicializa y pinta el botón
   // del gate (login obligatorio). Robusto aunque cargue después del 'load'.
   whenGoogleReady(() => { initGoogle(); updateGate(); });
+  // Loader de arranque: se oculta cuando la app renderizó y (si hay sesión) sincronizó
+  // la colección. Mínimo visible ~600ms para que no parpadee; failsafe por si la red cuelga.
+  const _loaderStart = Date.now();
+  function hideAppLoader() {
+    const l = el('appLoader');
+    if (!l || l.classList.contains('hide')) return;
+    const wait = Math.max(0, 600 - (Date.now() - _loaderStart));
+    setTimeout(() => {
+      l.classList.add('hide');
+      setTimeout(() => { if (l.parentNode) l.parentNode.removeChild(l); }, 500);
+    }, wait);
+  }
+  setTimeout(hideAppLoader, 4000);   // failsafe: nunca dejar el loader pegado
   // Sincroniza si ya hay sesión y prepara el Service Worker para push.
   window.addEventListener('load', () => {
     initGoogle();
     updateGate();
-    if (loggedIn() && cloudConfigured()) syncAfterLogin();
+    if (loggedIn() && cloudConfigured()) syncAfterLogin().finally(hideAppLoader);
+    else hideAppLoader();
     registerSW().then(refreshPushButton);   // prepara el Service Worker para push
   });
   // Al volver a la pestaña/app, refresca la campanita.

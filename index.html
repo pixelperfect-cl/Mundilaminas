@@ -31,8 +31,42 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Mundiláminas" />
   <link rel="stylesheet" href="styles.css?v=20260701d" />
+
+  <!-- Loader de arranque (foil splash). CSS crítico inline para que pinte al instante,
+       antes de que descargue styles.css. Autocontenido (clases ldr-*, keyframes propios). -->
+  <style>
+    #appLoader{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+      background:radial-gradient(125% 100% at 50% 0%,#151a35 0%,#0f1226 55%,#0a0d18 100%);
+      opacity:1;transition:opacity .45s ease}
+    #appLoader.hide{opacity:0;pointer-events:none}
+    #appLoader .ldr-in{text-align:center;padding:24px;transform:translateY(-4%)}
+    #appLoader .ldr-brand{margin:0;font-weight:900;letter-spacing:-.03em;line-height:1;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:clamp(2rem,11vw,2.8rem)}
+    #appLoader .ldr-brand span{
+      background:linear-gradient(100deg,#fff 0%,#cdd6ff 22%,#a7f3d0 42%,#fde68a 60%,#fca5d5 78%,#fff 100%);
+      background-size:220% auto;-webkit-background-clip:text;background-clip:text;
+      -webkit-text-fill-color:transparent;color:transparent;animation:ldrFoil 8s linear infinite}
+    #appLoader .ldr-bar{margin:22px auto 0;width:150px;height:4px;border-radius:99px;
+      background:rgba(255,255,255,.10);overflow:hidden}
+    #appLoader .ldr-bar>i{display:block;height:100%;width:42%;border-radius:99px;
+      background:linear-gradient(90deg,#7b6cf0,#5e7bff,#a7f3d0);animation:ldrSlide 1.15s ease-in-out infinite}
+    @keyframes ldrFoil{0%{background-position:0% 50%}100%{background-position:220% 50%}}
+    @keyframes ldrSlide{0%{transform:translateX(-130%)}100%{transform:translateX(320%)}}
+    @media (prefers-reduced-motion:reduce){
+      #appLoader .ldr-brand span{animation:none}
+      #appLoader .ldr-bar>i{animation-duration:2.4s}
+    }
+  </style>
 </head>
 <body>
+  <!-- Loader de arranque: se desvanece cuando la app renderizó y sincronizó -->
+  <div id="appLoader" role="status" aria-live="polite" aria-label="Cargando Mundiláminas">
+    <div class="ldr-in">
+      <h1 class="ldr-brand"><span>Mundiláminas</span></h1>
+      <div class="ldr-bar"><i></i></div>
+    </div>
+  </div>
+
   <!-- Landing + gate de inicio (login obligatorio con Google) -->
   <div class="login-gate" id="loginGate" hidden>
     <div class="landing">
@@ -71,7 +105,7 @@
         <p>Un domingo cualquiera, en casa de la abuela, mi hijo de 6 años y yo abrimos su álbum del Mundial. Tenía repetidas y le faltaban un montón. Se me ocurrió preguntar en el chat del condominio si había otros niños con láminas para intercambiar.</p>
         <p>Para mi sorpresa, llegaron varios mensajes: vecinos compartiendo sus listas de repetidas y de las que les faltaban. En uno venía el link de una app que armaba ese mensaje. «Genial», pensé, y la instalé.</p>
         <p>No alcancé a cargar dos láminas cuando saltó el primer popup de publicidad. Y otro. Y otro. Era un asco. La desinstalé al toque.</p>
-        <p>Así que me propuse hacer una yo mismo: que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
+        <p>Da la casualidad de que soy un papá medio ñoño con una agencia digital, así que en vez de resignarme me dije: «esta la hago yo». Una app que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
         <p class="lp-firma">— Emilio</p>
       </section>
 
@@ -265,7 +299,7 @@
         <p>Un domingo cualquiera, en casa de la abuela, mi hijo de 6 años y yo abrimos su álbum del Mundial. Tenía repetidas y le faltaban un montón. Se me ocurrió preguntar en el chat del condominio si había otros niños con láminas para intercambiar.</p>
         <p>Para mi sorpresa, llegaron varios mensajes: vecinos compartiendo sus listas de repetidas y de las que les faltaban. En uno venía el link de una app que armaba ese mensaje. «Genial», pensé, y la instalé.</p>
         <p>No alcancé a cargar dos láminas cuando saltó el primer popup de publicidad. Y otro. Y otro. Era un asco. La desinstalé al toque.</p>
-        <p>Así que me propuse hacer una yo mismo: que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
+        <p>Da la casualidad de que soy un papá medio ñoño con una agencia digital, así que en vez de resignarme me dije: «esta la hago yo». Una app que administre las láminas <b>sin un solo aviso encima</b>, y que además haga lo que de verdad sirve — <b>cruzar mis repetidas y mis faltantes con las de mis amigos</b>. Gratis. Para todos.</p>
         <p class="lp-firma">— Emilio</p>
       </div>
 
@@ -300,6 +334,6 @@
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="data.js?v=20260701b"></script>
-  <script src="app.js?v=20260701d"></script>
+  <script src="app.js?v=20260702a"></script>
 </body>
 </html>

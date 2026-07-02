@@ -71,7 +71,8 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; }
+/* overscroll: sin pull-to-refresh ni rebote de borde (sensación de app, no de navegador) */
+html, body { margin: 0; padding: 0; overscroll-behavior-y: none; }
 body {
   background: var(--bg);
   color: var(--text);

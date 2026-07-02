@@ -27,6 +27,9 @@
   let counts = loadJSON(LS_COUNTS, {});            // { stickerKey: copiasQueTengo }
   let teams = loadJSON(LS_TEAMS, null) || clone(CFG.DEFAULT_TEAMS);
   let openSections = new Set(loadJSON(LS_OPEN, []));
+  // Colapso manual en vistas filtradas (Me faltan/Repetidas), que van expandidas
+  // por defecto. Transitorio: se reinicia cada sesión (no se persiste).
+  let collapsedFilterSections = new Set();
   let filter = 'all';      // all | missing | repe
   let search = '';
   let album = CFG.buildAlbum(teams);
@@ -127,7 +130,11 @@
 
       const ss = sectionStats(section);
       const secPct = ss.total ? Math.round((ss.have / ss.total) * 100) : 0;
-      const isOpen = openSections.has(section.id) || !!search || filter !== 'all';
+      // "Todas": estado persistente (por defecto colapsado). Vistas filtradas
+      // (Me faltan/Repetidas): expandidas por defecto pero colapsables. Búsqueda: todo abierto.
+      const isOpen = search ? true
+        : (filter !== 'all') ? !collapsedFilterSections.has(section.id)
+        : openSections.has(section.id);
 
       const secEl = document.createElement('div');
       secEl.className = 'section' + (isOpen ? ' open' : '');
@@ -150,9 +157,15 @@
         <div class="sec-progress ${ss.have === ss.total ? 'done' : ''}" aria-hidden="true"><i style="width:${secPct}%"></i></div>
       `;
       head.addEventListener('click', () => {
-        if (openSections.has(section.id)) openSections.delete(section.id);
-        else openSections.add(section.id);
-        saveJSON(LS_OPEN, [...openSections]);
+        if (search) return;   // buscando: todo abierto para ver los resultados
+        if (filter !== 'all') {   // vistas filtradas: colapso transitorio
+          if (collapsedFilterSections.has(section.id)) collapsedFilterSections.delete(section.id);
+          else collapsedFilterSections.add(section.id);
+        } else {   // "Todas": estado persistente
+          if (openSections.has(section.id)) openSections.delete(section.id);
+          else openSections.add(section.id);
+          saveJSON(LS_OPEN, [...openSections]);
+        }
         renderSections();
       });
       secEl.appendChild(head);

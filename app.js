@@ -972,6 +972,12 @@
     }
   }
 
+  // Foto de perfil de Google; ajusta el sufijo de tamaño para que salga nítida en el header.
+  function avatarUrl(u) {
+    const p = (u && u.avatar_url) || '';
+    return p ? p.replace(/=s\d+-c\b/, '=s96-c') : '';
+  }
+
   function updateCloudUI() {
     const status = el('acctStatus');
     if (status) {
@@ -989,6 +995,18 @@
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
     const av = el('hdrAvatarIni');
     if (av) av.textContent = loggedIn() ? ((me.name || me.handle || '·').trim().charAt(0).toUpperCase() || '·') : '·';
+    const avImg = el('hdrAvatarImg'), avBtn = el('hdrAvatar');
+    const photo = loggedIn() ? avatarUrl(me) : '';
+    if (avImg && avBtn) {
+      if (photo) {
+        // Si falla la carga (403/red), cae de vuelta a la inicial.
+        avImg.onerror = () => { avImg.hidden = true; avBtn.classList.remove('has-photo'); };
+        if (avImg.getAttribute('src') !== photo) avImg.src = photo;
+        avImg.hidden = false; avBtn.classList.add('has-photo');
+      } else {
+        avImg.hidden = true; avImg.removeAttribute('src'); avBtn.classList.remove('has-photo');
+      }
+    }
     updateGate();
   }
   // ===================================================================

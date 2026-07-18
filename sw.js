@@ -12,8 +12,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Mundiláminas';
   const options = {
     body: data.body || '',
-    icon: 'icon-192.png',
-    badge: 'icon-192.png',
+    icon: 'icon-192.png?v=20260718a',
+    badge: 'icon-192.png?v=20260718a',
     data: { url: data.url || '/index.html' },
     vibrate: [80, 40, 80],
     tag: 'mundilaminas-match',

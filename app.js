@@ -1234,7 +1234,7 @@
   }
   async function registerSW() {
     if (!('serviceWorker' in navigator)) return null;
-    try { swReg = await navigator.serviceWorker.register('sw.js'); return swReg; }
+    try { swReg = await navigator.serviceWorker.register('sw.js?v=20260718a'); return swReg; }
     catch (e) { return null; }
   }
   function urlB64ToUint8Array(base64) {

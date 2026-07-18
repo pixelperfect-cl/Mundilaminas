@@ -14,6 +14,7 @@
   const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
   const LS_DISCLAIMER = 'wc26-disclaimer-ack';  // ya vio el aviso "app no oficial" (primer arranque)
   const LS_ALBUM = 'wc26-current-album';        // álbum activo recordado entre recargas
+  const LS_CNAV = 'wc26-country-nav-order';     // orden del panel "ir a país" (album | az)
 
   // Configuración de la nube. Por defecto la API vive en el MISMO origen que
   // la app (mismo dominio/cert) — ver apiBase(). Así funciona en cualquier
@@ -148,6 +149,7 @@
 
       const secEl = document.createElement('div');
       secEl.className = 'section' + (isOpen ? ' open' : '');
+      secEl.dataset.secId = section.id;   // ancla para el panel "ir a país"
 
       const teamFlag = (CFG.flagFor && CFG.flagFor(section.code)) || '';
       const flag = section.kind === 'team'
@@ -1475,6 +1477,77 @@
     w('dashActPush', togglePush);
   }
 
+  // ---------- Panel lateral "Ir a país" (hamburguesa de la vista Álbum) ----------
+  let cnOrder = localStorage.getItem(LS_CNAV) || 'album';   // 'album' | 'az'
+
+  function openCountryNav() { const b = el('countryNavBack'); if (!b) return; b.hidden = false; renderCountryNav(); }
+  function closeCountryNav() { const b = el('countryNavBack'); if (b) b.hidden = true; }
+  function setCnOrder(o) {
+    cnOrder = o;
+    try { localStorage.setItem(LS_CNAV, o); } catch {}
+    renderCountryNav();
+  }
+  function renderCountryNav() {
+    const list = el('cnList');
+    if (!list) return;
+    const oa = el('cnOrdAlbum'), oz = el('cnOrdAZ');
+    if (oa) oa.classList.toggle('active', cnOrder === 'album');
+    if (oz) oz.classList.toggle('active', cnOrder === 'az');
+    let secs = album.sections.filter((s) => s.kind === 'team');
+    if (cnOrder === 'az') secs = [...secs].sort((a, b) => (a.teamName || '').localeCompare(b.teamName || '', 'es'));
+    list.innerHTML = secs.map((s) => {
+      const ss = sectionStats(s);
+      const flag = (CFG.flagFor && CFG.flagFor(s.code)) || '⚽';
+      const code = (s.code || s.teamName || '').slice(0, 3).toUpperCase();
+      return `<button class="cn-item${ss.have === ss.total ? ' done' : ''}" data-sec="${s.id}" title="${escapeHtml(s.teamName || '')}">
+          <span class="cn-flag">${flag}</span><span class="cn-code">${escapeHtml(code)}</span>
+        </button>`;
+    }).join('');
+    list.querySelectorAll('.cn-item').forEach((b) => b.addEventListener('click', () => {
+      closeCountryNav();
+      jumpToSection(b.dataset.sec);
+    }));
+  }
+  // Lleva la vista Álbum a la sección pedida: la abre si estaba colapsada y,
+  // si el filtro/búsqueda activos la ocultan, vuelve a "Todas" para mostrarla.
+  function jumpToSection(id) {
+    if (currentView !== 'album') showView('album');
+    if (search) {
+      search = '';
+      const si = el('search'); if (si) si.value = '';
+      const sb = el('btnSearch'); if (sb) sb.classList.remove('active');
+    }
+    if (filter === 'all') {
+      if (!openSections.has(id)) { openSections.add(id); saveJSON(LS_OPEN, [...openSections]); }
+    } else {
+      collapsedFilterSections.delete(id);   // en vistas filtradas va expandida
+    }
+    renderSections();
+    let sec = document.querySelector('.section[data-sec-id="' + id + '"]');
+    if (!sec && filter !== 'all') {
+      // el país no tiene láminas que calcen con el filtro → volver a "Todas"
+      filter = 'all';
+      document.querySelectorAll('.filters button').forEach((x) => x.classList.toggle('active', x.dataset.filter === 'all'));
+      if (!openSections.has(id)) { openSections.add(id); saveJSON(LS_OPEN, [...openSections]); }
+      renderSections();
+      sec = document.querySelector('.section[data-sec-id="' + id + '"]');
+    }
+    if (sec) scrollToSection(sec);
+  }
+  function scrollToSection(sec) {
+    const tb = el('toolbar');
+    const off = () => {
+      const h = document.querySelector('.app-header');
+      return (h ? h.offsetHeight : 0) + (tb && !tb.hidden ? tb.offsetHeight : 0) + 8;
+    };
+    window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - off(), behavior: 'smooth' });
+    // El header se compacta al scrollear (cambia de altura) → una corrección final.
+    setTimeout(() => {
+      const y = sec.getBoundingClientRect().top + window.scrollY - off();
+      if (Math.abs(window.scrollY - y) > 12) window.scrollTo({ top: y, behavior: 'smooth' });
+    }, 480);
+  }
+
   // Diálogo de confirmación temático (reemplaza confirm()/alert() nativos).
   function confirmDialog(message, opts = {}) {
     return new Promise((resolve) => {
@@ -1534,6 +1607,10 @@
     on('btnHome', 'click', () => showView('home'));
     on('btnAlbum', 'click', () => showView('album'));
     on('albumChip', 'click', openFriends);
+    on('btnCountryNav', 'click', openCountryNav);
+    on('cnOrdAlbum', 'click', () => setCnOrder('album'));
+    on('cnOrdAZ', 'click', () => setCnOrder('az'));
+    { const cb = el('countryNavBack'); if (cb) cb.addEventListener('click', (e) => { if (e.target === cb) closeCountryNav(); }); }
     on('btnLists', 'click', openLists);
     on('hdrAvatar', 'click', openMenu);
     on('btnFriends', 'click', openFriends);
@@ -1582,7 +1659,10 @@
     m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.querySelector('.modal-back.open')) closeModals();
+    if (e.key !== 'Escape') return;
+    const cb = el('countryNavBack');
+    if (cb && !cb.hidden) { closeCountryNav(); return; }
+    if (document.querySelector('.modal-back.open')) closeModals();
   });
   setupStickyHeader();
   render();

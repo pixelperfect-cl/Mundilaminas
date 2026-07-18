@@ -30,7 +30,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Mundiláminas" />
-  <link rel="stylesheet" href="styles.css?v=20260717a" />
+  <link rel="stylesheet" href="styles.css?v=20260717b" />
 
   <!-- Loader de arranque (foil splash). CSS crítico inline para que pinte al instante,
        antes de que descargue styles.css. Autocontenido (clases ldr-*, keyframes propios). -->
@@ -141,10 +141,13 @@
   <!-- Toolbar (vista Álbum) -->
   <div class="toolbar" id="toolbar" hidden>
     <input class="search" id="search" type="search" placeholder="Buscar por número o equipo… (ej: 25, Brasil)" />
-    <div class="filters" role="group" aria-label="Filtro de láminas">
-      <button data-filter="all" class="active">Todas</button>
-      <button data-filter="missing">Me faltan</button>
-      <button data-filter="repe">Repetidas</button>
+    <div class="toolbar-row">
+      <div class="filters" role="group" aria-label="Filtro de láminas">
+        <button data-filter="all" class="active">Todas</button>
+        <button data-filter="missing">Me faltan</button>
+        <button data-filter="repe">Repetidas</button>
+      </div>
+      <button class="cn-toggle" id="btnCountryNav" aria-label="Ir a un país" title="Ir a un país">☰</button>
     </div>
   </div>
 
@@ -343,10 +346,21 @@
     </div>
   </div>
 
+  <!-- Panel lateral: ir a un país (hamburguesa de la vista Álbum) -->
+  <div class="country-nav-back" id="countryNavBack" hidden>
+    <nav class="country-nav" aria-label="Ir a un país">
+      <div class="cn-head" role="group" aria-label="Orden de la lista">
+        <button id="cnOrdAlbum" class="active" title="Orden del álbum">📖</button>
+        <button id="cnOrdAZ" title="Orden alfabético">A-Z</button>
+      </div>
+      <div class="cn-list" id="cnList"></div>
+    </nav>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="data.js?v=20260701b"></script>
-  <script src="app.js?v=20260717a"></script>
+  <script src="app.js?v=20260717b"></script>
 </body>
 </html>

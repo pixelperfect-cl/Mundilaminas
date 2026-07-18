@@ -116,6 +116,13 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
   font-size: 16px; outline: none;   /* 16px: evita el auto-zoom de iOS al enfocar */
 }
 .search::placeholder { color: var(--muted); }
+.toolbar-row { display: flex; gap: 8px; align-items: stretch; }
+.toolbar-row .filters { flex: 1; min-width: 0; }
+.cn-toggle {
+  flex: none; width: 44px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font-size: 1.05rem; font-weight: 800; cursor: pointer;
+}
+.cn-toggle:active { background: var(--accent-soft); }
 .filters { display: flex; gap: 6px; }
 .filters button {
   flex: 1; padding: 9px 4px; border-radius: 999px; border: 1px solid var(--line);
@@ -224,6 +231,39 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
 }
 .navtab:active { background: var(--accent-soft); }
 .navtab .bell-badge { top: 2px; right: calc(50% - 22px); }
+
+/* ---------- Panel lateral "Ir a país" (hamburguesa del Álbum) ---------- */
+.country-nav-back {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(10, 12, 24, .45);
+}
+.country-nav-back[hidden] { display: none; }
+.country-nav {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 100px; max-width: 34vw;
+  padding: calc(10px + var(--safe-t)) 8px calc(12px + var(--safe-b)) 8px;
+  background: var(--card); border-left: 1px solid var(--line);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, .35);
+  display: flex; flex-direction: column; gap: 8px;
+  animation: cnSlide .18s ease;
+}
+@keyframes cnSlide { from { transform: translateX(100%); } to { transform: none; } }
+.cn-head { display: flex; gap: 4px; flex: none; }
+.cn-head button {
+  flex: 1; padding: 6px 0; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--card-2); color: var(--muted); font-size: .72rem; font-weight: 800; cursor: pointer;
+}
+.cn-head button.active { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
+.cn-list { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }
+.cn-item {
+  display: flex; align-items: center; gap: 7px; flex: none;
+  padding: 7px 6px; border: none; border-bottom: 1px solid var(--hair);
+  background: transparent; color: var(--text); cursor: pointer; text-align: left;
+}
+.cn-item:active { background: var(--accent-soft); }
+.cn-flag { font-size: 1.05rem; line-height: 1; }
+.cn-code { font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+.cn-item.done .cn-code { color: var(--green); }
 
 /* ---------- Álbum compartido activo (chip en header) ---------- */
 .album-chip {

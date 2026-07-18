@@ -149,6 +149,13 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
   font-size: 16px; outline: none;   /* 16px: evita el auto-zoom de iOS al enfocar */
 }
 .search::placeholder { color: var(--muted); }
+.toolbar-row { display: flex; gap: 8px; align-items: stretch; }
+.toolbar-row .filters { flex: 1; min-width: 0; }
+.cn-toggle {
+  flex: none; width: 44px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font-size: 1.05rem; font-weight: 800; cursor: pointer;
+}
+.cn-toggle:active { background: var(--accent-soft); }
 .filters { display: flex; gap: 6px; }
 .filters button {
   flex: 1; padding: 9px 4px; border-radius: 999px; border: 1px solid var(--line);
@@ -257,6 +264,39 @@ body.scrolled .progress-label { margin-top: 4px; font-size: .72rem; }
 }
 .navtab:active { background: var(--accent-soft); }
 .navtab .bell-badge { top: 2px; right: calc(50% - 22px); }
+
+/* ---------- Panel lateral "Ir a país" (hamburguesa del Álbum) ---------- */
+.country-nav-back {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(10, 12, 24, .45);
+}
+.country-nav-back[hidden] { display: none; }
+.country-nav {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 100px; max-width: 34vw;
+  padding: calc(10px + var(--safe-t)) 8px calc(12px + var(--safe-b)) 8px;
+  background: var(--card); border-left: 1px solid var(--line);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, .35);
+  display: flex; flex-direction: column; gap: 8px;
+  animation: cnSlide .18s ease;
+}
+@keyframes cnSlide { from { transform: translateX(100%); } to { transform: none; } }
+.cn-head { display: flex; gap: 4px; flex: none; }
+.cn-head button {
+  flex: 1; padding: 6px 0; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--card-2); color: var(--muted); font-size: .72rem; font-weight: 800; cursor: pointer;
+}
+.cn-head button.active { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
+.cn-list { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }
+.cn-item {
+  display: flex; align-items: center; gap: 7px; flex: none;
+  padding: 7px 6px; border: none; border-bottom: 1px solid var(--hair);
+  background: transparent; color: var(--text); cursor: pointer; text-align: left;
+}
+.cn-item:active { background: var(--accent-soft); }
+.cn-flag { font-size: 1.05rem; line-height: 1; }
+.cn-code { font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+.cn-item.done .cn-code { color: var(--green); }
 
 /* ---------- Álbum compartido activo (chip en header) ---------- */
 .album-chip {
@@ -777,10 +817,13 @@ body.gated { overflow: hidden; }
   <!-- Toolbar (vista Álbum) -->
   <div class="toolbar" id="toolbar" hidden>
     <input class="search" id="search" type="search" placeholder="Buscar por número o equipo… (ej: 25, Brasil)" />
-    <div class="filters" role="group" aria-label="Filtro de láminas">
-      <button data-filter="all" class="active">Todas</button>
-      <button data-filter="missing">Me faltan</button>
-      <button data-filter="repe">Repetidas</button>
+    <div class="toolbar-row">
+      <div class="filters" role="group" aria-label="Filtro de láminas">
+        <button data-filter="all" class="active">Todas</button>
+        <button data-filter="missing">Me faltan</button>
+        <button data-filter="repe">Repetidas</button>
+      </div>
+      <button class="cn-toggle" id="btnCountryNav" aria-label="Ir a un país" title="Ir a un país">☰</button>
     </div>
   </div>
 
@@ -977,6 +1020,17 @@ body.gated { overflow: hidden; }
         <button class="act-share" id="btnDisclaimerOk">Entendido, continuar</button>
       </div>
     </div>
+  </div>
+
+  <!-- Panel lateral: ir a un país (hamburguesa de la vista Álbum) -->
+  <div class="country-nav-back" id="countryNavBack" hidden>
+    <nav class="country-nav" aria-label="Ir a un país">
+      <div class="cn-head" role="group" aria-label="Orden de la lista">
+        <button id="cnOrdAlbum" class="active" title="Orden del álbum">📖</button>
+        <button id="cnOrdAZ" title="Orden alfabético">A-Z</button>
+      </div>
+      <div class="cn-list" id="cnList"></div>
+    </nav>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -1291,6 +1345,7 @@ window.ALBUM_CONFIG = {
   const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
   const LS_DISCLAIMER = 'wc26-disclaimer-ack';  // ya vio el aviso "app no oficial" (primer arranque)
   const LS_ALBUM = 'wc26-current-album';        // álbum activo recordado entre recargas
+  const LS_CNAV = 'wc26-country-nav-order';     // orden del panel "ir a país" (album | az)
 
   // Configuración de la nube. Por defecto la API vive en el MISMO origen que
   // la app (mismo dominio/cert) — ver apiBase(). Así funciona en cualquier
@@ -1425,6 +1480,7 @@ window.ALBUM_CONFIG = {
 
       const secEl = document.createElement('div');
       secEl.className = 'section' + (isOpen ? ' open' : '');
+      secEl.dataset.secId = section.id;   // ancla para el panel "ir a país"
 
       const teamFlag = (CFG.flagFor && CFG.flagFor(section.code)) || '';
       const flag = section.kind === 'team'
@@ -2752,6 +2808,77 @@ window.ALBUM_CONFIG = {
     w('dashActPush', togglePush);
   }
 
+  // ---------- Panel lateral "Ir a país" (hamburguesa de la vista Álbum) ----------
+  let cnOrder = localStorage.getItem(LS_CNAV) || 'album';   // 'album' | 'az'
+
+  function openCountryNav() { const b = el('countryNavBack'); if (!b) return; b.hidden = false; renderCountryNav(); }
+  function closeCountryNav() { const b = el('countryNavBack'); if (b) b.hidden = true; }
+  function setCnOrder(o) {
+    cnOrder = o;
+    try { localStorage.setItem(LS_CNAV, o); } catch {}
+    renderCountryNav();
+  }
+  function renderCountryNav() {
+    const list = el('cnList');
+    if (!list) return;
+    const oa = el('cnOrdAlbum'), oz = el('cnOrdAZ');
+    if (oa) oa.classList.toggle('active', cnOrder === 'album');
+    if (oz) oz.classList.toggle('active', cnOrder === 'az');
+    let secs = album.sections.filter((s) => s.kind === 'team');
+    if (cnOrder === 'az') secs = [...secs].sort((a, b) => (a.teamName || '').localeCompare(b.teamName || '', 'es'));
+    list.innerHTML = secs.map((s) => {
+      const ss = sectionStats(s);
+      const flag = (CFG.flagFor && CFG.flagFor(s.code)) || '⚽';
+      const code = (s.code || s.teamName || '').slice(0, 3).toUpperCase();
+      return `<button class="cn-item${ss.have === ss.total ? ' done' : ''}" data-sec="${s.id}" title="${escapeHtml(s.teamName || '')}">
+          <span class="cn-flag">${flag}</span><span class="cn-code">${escapeHtml(code)}</span>
+        </button>`;
+    }).join('');
+    list.querySelectorAll('.cn-item').forEach((b) => b.addEventListener('click', () => {
+      closeCountryNav();
+      jumpToSection(b.dataset.sec);
+    }));
+  }
+  // Lleva la vista Álbum a la sección pedida: la abre si estaba colapsada y,
+  // si el filtro/búsqueda activos la ocultan, vuelve a "Todas" para mostrarla.
+  function jumpToSection(id) {
+    if (currentView !== 'album') showView('album');
+    if (search) {
+      search = '';
+      const si = el('search'); if (si) si.value = '';
+      const sb = el('btnSearch'); if (sb) sb.classList.remove('active');
+    }
+    if (filter === 'all') {
+      if (!openSections.has(id)) { openSections.add(id); saveJSON(LS_OPEN, [...openSections]); }
+    } else {
+      collapsedFilterSections.delete(id);   // en vistas filtradas va expandida
+    }
+    renderSections();
+    let sec = document.querySelector('.section[data-sec-id="' + id + '"]');
+    if (!sec && filter !== 'all') {
+      // el país no tiene láminas que calcen con el filtro → volver a "Todas"
+      filter = 'all';
+      document.querySelectorAll('.filters button').forEach((x) => x.classList.toggle('active', x.dataset.filter === 'all'));
+      if (!openSections.has(id)) { openSections.add(id); saveJSON(LS_OPEN, [...openSections]); }
+      renderSections();
+      sec = document.querySelector('.section[data-sec-id="' + id + '"]');
+    }
+    if (sec) scrollToSection(sec);
+  }
+  function scrollToSection(sec) {
+    const tb = el('toolbar');
+    const off = () => {
+      const h = document.querySelector('.app-header');
+      return (h ? h.offsetHeight : 0) + (tb && !tb.hidden ? tb.offsetHeight : 0) + 8;
+    };
+    window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - off(), behavior: 'smooth' });
+    // El header se compacta al scrollear (cambia de altura) → una corrección final.
+    setTimeout(() => {
+      const y = sec.getBoundingClientRect().top + window.scrollY - off();
+      if (Math.abs(window.scrollY - y) > 12) window.scrollTo({ top: y, behavior: 'smooth' });
+    }, 480);
+  }
+
   // Diálogo de confirmación temático (reemplaza confirm()/alert() nativos).
   function confirmDialog(message, opts = {}) {
     return new Promise((resolve) => {
@@ -2811,6 +2938,10 @@ window.ALBUM_CONFIG = {
     on('btnHome', 'click', () => showView('home'));
     on('btnAlbum', 'click', () => showView('album'));
     on('albumChip', 'click', openFriends);
+    on('btnCountryNav', 'click', openCountryNav);
+    on('cnOrdAlbum', 'click', () => setCnOrder('album'));
+    on('cnOrdAZ', 'click', () => setCnOrder('az'));
+    { const cb = el('countryNavBack'); if (cb) cb.addEventListener('click', (e) => { if (e.target === cb) closeCountryNav(); }); }
     on('btnLists', 'click', openLists);
     on('hdrAvatar', 'click', openMenu);
     on('btnFriends', 'click', openFriends);
@@ -2859,7 +2990,10 @@ window.ALBUM_CONFIG = {
     m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.querySelector('.modal-back.open')) closeModals();
+    if (e.key !== 'Escape') return;
+    const cb = el('countryNavBack');
+    if (cb && !cb.hidden) { closeCountryNav(); return; }
+    if (document.querySelector('.modal-back.open')) closeModals();
   });
   setupStickyHeader();
   render();

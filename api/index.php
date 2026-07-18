@@ -13,6 +13,16 @@
  *   POST /friends/accept         → { handle }
  *   GET  /friends                → amigos (con nº de coincidencias) + solicitudes
  *   GET  /friends/matches?with=  → listas de intercambio con un amigo
+ *
+ *   Álbumes compartidos (pool = collection del dueño). Solo se invita a
+ *   amigos ya aceptados (no hay códigos ni links de unión):
+ *   POST /albums/share           → crea/devuelve mi álbum compartido
+ *   GET  /albums/mine            → álbumes donde soy dueño o miembro
+ *   GET  /albums/{id}            → metadata + miembros
+ *   GET  /albums/{id}/collection?since=<ts> → { counts, ts } (incremental)
+ *   POST /albums/{id}/collection → { ops:[{sid,delta}] } edición por deltas
+ *   POST /albums/{id}/invite     → { handle } (dueño; solo amigos aceptados)
+ *   POST /albums/{id}/leave|kick|delete
  */
 
 require_once __DIR__ . '/lib/http.php';
@@ -332,6 +342,183 @@ if ($method === 'POST' && $path === 'push/unsubscribe') {
     $s->execute([$me['uid']]);
   }
   json_out(['ok' => true]);
+}
+
+// ---------- Álbumes compartidos ----------
+if (strpos($path, 'albums') === 0) {
+  $me  = require_user();
+  $pdo = db();
+
+  // Compartir mi álbum (idempotente): crea/devuelve mi shared_album.
+  // El join_code se sigue generando porque la columna es NOT NULL/UNIQUE en la
+  // tabla viva, pero ya no se expone ni se usa (la unión es solo por invitación).
+  if ($method === 'POST' && $path === 'albums/share') {
+    $user = fetch_user($pdo, $me['uid']);
+    $s = $pdo->prepare('SELECT id, owner_id, name FROM shared_albums WHERE owner_id = ?');
+    $s->execute([$me['uid']]);
+    $alb = $s->fetch();
+    if (!$alb) {
+      $name = 'Álbum de ' . ($user['name'] ?: ('@' . $user['handle']));
+      $code = make_join_code($pdo);
+      $pdo->beginTransaction();
+      $ins = $pdo->prepare('INSERT INTO shared_albums(owner_id, name, join_code, created_at) VALUES(?,?,?,NOW())');
+      $ins->execute([$me['uid'], mb_substr($name, 0, 80), $code]);
+      $albumId = (int)$pdo->lastInsertId();
+      $m = $pdo->prepare("INSERT INTO shared_album_members(album_id, user_id, role, joined_at)
+                          VALUES(?,?, 'owner', NOW()) ON DUPLICATE KEY UPDATE role = 'owner'");
+      $m->execute([$albumId, $me['uid']]);
+      $pdo->commit();
+      $s->execute([$me['uid']]); $alb = $s->fetch();
+    }
+    json_out(['album' => album_brief($pdo, $alb, 'owner', $user)]);
+  }
+
+  // Mis álbumes (donde soy dueño o miembro).
+  if ($method === 'GET' && $path === 'albums/mine') {
+    $q = $pdo->prepare(
+      "SELECT a.id, a.owner_id, a.name, m.role
+         FROM shared_album_members m JOIN shared_albums a ON a.id = m.album_id
+        WHERE m.user_id = ? ORDER BY (m.role = 'owner') DESC, a.created_at"
+    );
+    $q->execute([$me['uid']]);
+    $albums = array_map(fn($a) => album_brief($pdo, $a, $a['role']), $q->fetchAll());
+    json_out(['albums' => $albums]);
+  }
+
+  // /albums/{id} y sub-recursos (solo miembros).
+  $parts = explode('/', $path);
+  if (isset($parts[1]) && ctype_digit($parts[1])) {
+    $albumId = (int)$parts[1];
+    $sub     = $parts[2] ?? '';
+    $mem = album_membership($pdo, $albumId, $me['uid']);
+    if (!$mem) fail('No eres miembro de ese álbum', 403);
+    $ownerId = (int)$mem['owner_id'];
+    $isOwner = ($mem['role'] === 'owner');
+
+    // Metadata + miembros.
+    if ($method === 'GET' && $sub === '') {
+      $mm = $pdo->prepare(
+        "SELECT u.handle, u.name, u.avatar_url, m.role
+           FROM shared_album_members m JOIN users u ON u.id = m.user_id
+          WHERE m.album_id = ? ORDER BY (m.role = 'owner') DESC, u.name, u.handle"
+      );
+      $mm->execute([$albumId]);
+      json_out(['album' => album_brief($pdo, $mem, $mem['role']), 'members' => $mm->fetchAll()]);
+    }
+
+    // Leer la colección compartida (= collection del dueño), con ?since incremental.
+    if ($method === 'GET' && $sub === 'collection') {
+      $since = isset($_GET['since']) ? (int)$_GET['since'] : 0;
+      if ($since > 0) {
+        $r = $pdo->prepare('SELECT sid, qty FROM collection WHERE user_id = ? AND updated_at > FROM_UNIXTIME(?)');
+        $r->execute([$ownerId, $since]);
+      } else {
+        $r = $pdo->prepare('SELECT sid, qty FROM collection WHERE user_id = ?');
+        $r->execute([$ownerId]);
+      }
+      $counts = [];
+      foreach ($r as $row) $counts[$row['sid']] = (int)$row['qty'];
+      $ts = (int)$pdo->query('SELECT UNIX_TIMESTAMP()')->fetchColumn();
+      json_out(['counts' => $counts, 'ts' => $ts]);
+    }
+
+    // Editar por deltas. NO se borran filas en qty 0 (se deja qty=0 para el polling).
+    if ($method === 'POST' && $sub === 'collection') {
+      $in  = body_json();
+      $ops = $in['ops'] ?? null;
+      if (!is_array($ops)) fail('Falta "ops"');
+      $pdo->beginTransaction();
+      $up = $pdo->prepare(
+        'INSERT INTO collection(user_id, sid, qty, updated_at) VALUES(?,?,GREATEST(0,?),NOW())
+         ON DUPLICATE KEY UPDATE qty = GREATEST(0, CAST(qty AS SIGNED) + ?), updated_at = NOW()'
+      );
+      $touched = [];
+      foreach ($ops as $op) {
+        $sid = substr((string)($op['sid'] ?? ''), 0, 24);
+        if ($sid === '') continue;
+        $delta = (int)($op['delta'] ?? 0);
+        if ($delta === 0) continue;
+        $delta = max(-9999, min(9999, $delta));
+        $up->execute([$ownerId, $sid, $delta, $delta]);
+        $touched[$sid] = true;
+      }
+      $pdo->commit();
+      $counts = [];
+      if ($touched) {
+        $sids = array_keys($touched);
+        $ph = implode(',', array_fill(0, count($sids), '?'));
+        $q = $pdo->prepare("SELECT sid, qty FROM collection WHERE user_id = ? AND sid IN ($ph)");
+        $q->execute(array_merge([$ownerId], $sids));
+        foreach ($q as $row) $counts[$row['sid']] = (int)$row['qty'];
+      }
+      $ts = (int)$pdo->query('SELECT UNIX_TIMESTAMP()')->fetchColumn();
+      json_out(['ok' => true, 'counts' => $counts, 'ts' => $ts]);
+    }
+
+    // Invitar a un amigo (dueño): como ya hay amistad aceptada, entra directo
+    // como miembro y se le avisa por push. Idempotente si ya era miembro.
+    if ($method === 'POST' && $sub === 'invite') {
+      if (!$isOwner) fail('Solo el dueño puede invitar', 403);
+      $in = body_json();
+      $handle = ltrim(trim($in['handle'] ?? ''), '@');
+      if ($handle === '') fail('Falta el handle');
+      $t = $pdo->prepare('SELECT id, handle, name, avatar_url FROM users WHERE handle = ?');
+      $t->execute([$handle]);
+      $u = $t->fetch();
+      if (!$u) fail('Usuario no encontrado', 404);
+      if ((int)$u['id'] === $ownerId) fail('Ya eres el dueño del álbum');
+      $c = $pdo->prepare("SELECT 1 FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'accepted'");
+      $c->execute([$me['uid'], $u['id']]);
+      if (!$c->fetch()) fail('Solo puedes invitar a amigos ya agregados', 403);
+      $m = $pdo->prepare("INSERT INTO shared_album_members(album_id, user_id, role, joined_at)
+                          VALUES(?,?, 'member', NOW()) ON DUPLICATE KEY UPDATE role = role");
+      $m->execute([$albumId, $u['id']]);
+      try {
+        require_once __DIR__ . '/lib/push.php';
+        $meUser = fetch_user($pdo, $me['uid']);
+        send_push_to_user($pdo, (int)$u['id'], [
+          'title' => '📒 Te sumaron a un álbum',
+          'body'  => ($meUser['name'] ?: ('@' . $meUser['handle'])) . ' compartió su álbum contigo. Míralo en 👥 Amigos → Mis álbumes.',
+          'url'   => '/',
+        ]);
+      } catch (\Throwable $e) { /* la invitación igual quedó */ }
+      json_out(['ok' => true, 'member' => public_user($u)]);
+    }
+
+    // Salir (miembro).
+    if ($method === 'POST' && $sub === 'leave') {
+      if ($isOwner) fail('El dueño no puede salir; borra el álbum', 400);
+      $d = $pdo->prepare('DELETE FROM shared_album_members WHERE album_id = ? AND user_id = ?');
+      $d->execute([$albumId, $me['uid']]);
+      json_out(['ok' => true]);
+    }
+
+    // Sacar a un miembro (dueño).
+    if ($method === 'POST' && $sub === 'kick') {
+      if (!$isOwner) fail('Solo el dueño puede sacar miembros', 403);
+      $in = body_json();
+      $handle = ltrim(trim($in['handle'] ?? ''), '@');
+      if ($handle === '') fail('Falta el handle');
+      $t = $pdo->prepare('SELECT id FROM users WHERE handle = ?');
+      $t->execute([$handle]);
+      $u = $t->fetch();
+      if (!$u) fail('Usuario no encontrado', 404);
+      if ((int)$u['id'] === $ownerId) fail('No puedes sacar al dueño');
+      $d = $pdo->prepare('DELETE FROM shared_album_members WHERE album_id = ? AND user_id = ?');
+      $d->execute([$albumId, $u['id']]);
+      json_out(['ok' => true]);
+    }
+
+    // Borrar el álbum (dueño). La collection del dueño se conserva.
+    if ($method === 'POST' && $sub === 'delete') {
+      if (!$isOwner) fail('Solo el dueño puede borrar el álbum', 403);
+      $d = $pdo->prepare('DELETE FROM shared_albums WHERE id = ?');   // cascade borra miembros
+      $d->execute([$albumId]);
+      json_out(['ok' => true]);
+    }
+  }
+
+  fail('Ruta de álbum no encontrada', 404);
 }
 
 // ---------- Admin: estadísticas (solo correos en 'admin_emails') ----------

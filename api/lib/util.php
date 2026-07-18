@@ -45,6 +45,46 @@ function bearer_token() {
   return (stripos($h, 'Bearer ') === 0) ? substr($h, 7) : '';
 }
 
+// Genera un código único para shared_albums.join_code. La columna es NOT NULL
+// UNIQUE en la tabla viva, así que hay que llenarla, pero el código ya no se
+// expone al cliente (la unión a un álbum es solo por invitación entre amigos).
+function make_join_code($pdo) {
+  for ($i = 0; $i < 10; $i++) {
+    $c = strtoupper(bin2hex(random_bytes(3)));   // 6 hex en mayúscula
+    $s = $pdo->prepare('SELECT 1 FROM shared_albums WHERE join_code = ?');
+    $s->execute([$c]);
+    if (!$s->fetch()) return $c;
+  }
+  return strtoupper(bin2hex(random_bytes(6)));
+}
+
+// Resumen de un álbum para el cliente (con dueño y nº de miembros).
+function album_brief($pdo, $alb, $myRole, $ownerUser = null) {
+  if (!$ownerUser) $ownerUser = fetch_user($pdo, $alb['owner_id']);
+  $c = $pdo->prepare('SELECT COUNT(*) FROM shared_album_members WHERE album_id = ?');
+  $c->execute([$alb['id']]);
+  return [
+    'id'           => (int)$alb['id'],
+    'name'         => $alb['name'],
+    'owner_handle' => $ownerUser['handle'] ?? null,
+    'owner_name'   => $ownerUser['name'] ?? null,
+    'role'         => $myRole,
+    'members'      => (int)$c->fetchColumn(),
+  ];
+}
+
+// Devuelve la fila del álbum + mi rol si soy miembro; si no, false.
+function album_membership($pdo, $albumId, $uid) {
+  $s = $pdo->prepare(
+    'SELECT a.id, a.owner_id, a.name, m.role
+       FROM shared_albums a
+       JOIN shared_album_members m ON m.album_id = a.id AND m.user_id = ?
+      WHERE a.id = ?'
+  );
+  $s->execute([$uid, $albumId]);
+  return $s->fetch();
+}
+
 // Crea/actualiza una dirección de amistad.
 function set_friend($pdo, $a, $b, $status) {
   $s = $pdo->prepare(

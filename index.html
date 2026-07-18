@@ -30,7 +30,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Mundiláminas" />
-  <link rel="stylesheet" href="styles.css?v=20260703b" />
+  <link rel="stylesheet" href="styles.css?v=20260717a" />
 
   <!-- Loader de arranque (foil splash). CSS crítico inline para que pinte al instante,
        antes de que descargue styles.css. Autocontenido (clases ldr-*, keyframes propios). -->
@@ -132,6 +132,7 @@
       </div>
       <button class="hdr-avatar" id="hdrAvatar" aria-label="Tu cuenta, avisos y configuración" title="Tu cuenta y configuración"><img class="avatar-img" id="hdrAvatarImg" alt="" referrerpolicy="no-referrer" hidden><span class="avatar-ini" id="hdrAvatarIni">·</span><span class="avatar-badge" id="notifBadge" hidden>0</span></button>
     </div>
+    <button class="album-chip" id="albumChip" hidden></button>
   </header>
 
   <!-- Inicio / Dashboard -->
@@ -250,12 +251,24 @@
       </div>
       <button class="act-whatsapp" id="inviteWhatsapp">🟢 Invitar amigo por WhatsApp</button>
 
+      <div id="albumsSection" hidden></div>
+
       <div class="drawer-sep">Agregar un amigo</div>
       <div class="add-friend">
         <input class="search" id="friendCode" placeholder="código @handle o correo" />
         <button class="act-share" id="addFriendBtn">Agregar</button>
       </div>
       <div id="friendsBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Invitar amigos a mi álbum compartido -->
+  <div class="modal-back" id="modalAlbumInvite">
+    <div class="modal">
+      <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
+      <h2>📒 Tu álbum compartido</h2>
+      <p class="hint">Los amigos que invites entran directo al álbum: marcan láminas contigo y todos ven los mismos conteos. Solo puedes invitar a amigos ya agregados.</p>
+      <div id="albumInviteBody"></div>
     </div>
   </div>
 
@@ -334,6 +347,6 @@
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="data.js?v=20260701b"></script>
-  <script src="app.js?v=20260703a"></script>
+  <script src="app.js?v=20260717a"></script>
 </body>
 </html>

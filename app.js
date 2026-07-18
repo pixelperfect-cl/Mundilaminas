@@ -13,6 +13,7 @@
   const LS_GID = 'wc26-gid';
   const LS_COUNTS_OWNER = 'wc26-counts-owner';  // dueño de la colección local (evita fuga entre cuentas)
   const LS_DISCLAIMER = 'wc26-disclaimer-ack';  // ya vio el aviso "app no oficial" (primer arranque)
+  const LS_ALBUM = 'wc26-current-album';        // álbum activo recordado entre recargas
 
   // Configuración de la nube. Por defecto la API vive en el MISMO origen que
   // la app (mismo dominio/cert) — ver apiBase(). Así funciona en cualquier
@@ -43,10 +44,19 @@
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   function getCount(key) {
+    if (isShared()) return sharedCounts[key] || 0;
     return counts[key] || 0;
   }
   function setCount(key, n) {
     n = Math.max(0, n | 0);
+    if (isShared()) {                       // compartido: edición por delta
+      const prev = sharedCounts[key] || 0;
+      const delta = n - prev;
+      if (delta === 0) return;
+      if (n === 0) delete sharedCounts[key]; else sharedCounts[key] = n;
+      queueSharedDelta(key, delta);
+      return;
+    }
     if (n === 0) delete counts[key]; else counts[key] = n;
     saveJSON(LS_COUNTS, counts);
     markDirty(key);   // para sincronizar con la nube si hay sesión
@@ -513,6 +523,16 @@
   let currentView = 'home';
   let lastFriends = { friends: [], incoming: [] };
 
+  // ---------- Álbum activo (personal vs compartido) ----------
+  // currentAlbum: {type:'personal'} | {type:'shared', id, name, ownerHandle}
+  let currentAlbum = { type: 'personal' };
+  let myAlbums = [];          // cache de GET /albums/mine
+  let sharedCounts = {};      // por KEY (convertido desde sid) del compartido activo
+  let sharedSince = 0;        // ts del último GET para polling incremental
+  let sharedPending = {};     // { sid: deltaAcumulado } pendiente de enviar
+  let sharedFlushTimer = null, albumPollTimer = null;
+  function isShared() { return currentAlbum.type === 'shared'; }
+
   function apiBase() {
     let b = (localStorage.getItem(LS_API) || DEFAULT_API_BASE || '').replace(/\/+$/, '');
     // Same-origin por defecto + auto-reparación: si está vacío o quedó apuntando
@@ -548,6 +568,10 @@
 
   async function flushDirty() {
     if (!loggedIn() || !cloudConfigured() || dirty.size === 0) return;
+    // Dueño con álbum compartido: su collection en el server ES el pool del
+    // álbum. Nunca subir el PUT absoluto personal (pisaría aportes de otros
+    // miembros); los cambios del compartido viajan por deltas.
+    if (myOwnedAlbum()) { dirty.clear(); saveJSON(LS_DIRTY, []); return; }
     const sending = [...dirty];
     const all = countsBySid(), payload = {};
     sending.forEach((sid) => { payload[sid] = all[sid] || 0; });
@@ -610,8 +634,13 @@
   function doLogout() {
     clearSession();
     stopNotifPolling();
+    stopAlbumPolling();
+    currentAlbum = { type: 'personal' }; sharedCounts = {}; sharedPending = {}; sharedSince = 0; myAlbums = [];
+    localStorage.removeItem(LS_ALBUM);
     setBadge(0);
+    updateAlbumChip();
     render();
+    renderAlbumsSection();
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
     toast('Sesión cerrada');
   }
@@ -632,6 +661,10 @@
     try { const sub = await currentPushSub(); if (sub) { try { await sub.unsubscribe(); } catch (e) {} } } catch (e) {}
     clearSession();
     stopNotifPolling();
+    stopAlbumPolling();
+    currentAlbum = { type: 'personal' }; sharedCounts = {}; sharedPending = {}; sharedSince = 0; myAlbums = [];
+    localStorage.removeItem(LS_ALBUM);
+    updateAlbumChip();
     setBadge(0);
     counts = {}; dirty = new Set();
     localStorage.removeItem(LS_COUNTS);
@@ -667,24 +700,44 @@
         dirty = new Set(); saveJSON(LS_DIRTY, []);
       }
       if (ownerTag) localStorage.setItem(LS_COUNTS_OWNER, ownerTag);
-      // Sync personal: combina la colección local con la del server por máximo.
-      const server = data.counts || {};
-      let changed = false;
-      album.stickers.forEach((s) => {
-        if (!s.sid) return;
-        const local = counts[s.key] || 0, srv = server[s.sid] || 0, mx = Math.max(local, srv);
-        if (mx !== local) { counts[s.key] = mx; changed = true; }
-      });
-      if (changed) saveJSON(LS_COUNTS, counts);
-      dirty = new Set(Object.keys(countsBySid()));   // subir todo lo combinado
-      saveJSON(LS_DIRTY, [...dirty]);
-      await flushDirty();
-      render();
-      updateCloudUI();
+      // ¿En qué álbum quedo? Si compartí el mío, ese manda; si estaba metido
+      // en el de un amigo, lo retomo; si no, sync personal de siempre.
+      await loadMyAlbums();
+      const owned = myOwnedAlbum();
+      const remembered = loadJSON(LS_ALBUM, null);
+      const remOk = remembered && remembered.type === 'shared' && myAlbums.some((a) => a.id === remembered.id);
+      if (owned) {
+        // Mi álbum ya es compartido: el pool ES mi collection en el server.
+        // NO hago el merge/PUT personal absoluto (pisaría aportes y filas qty=0).
+        updateCloudUI();
+        await switchAlbum({ type: 'shared', id: owned.id, name: owned.name });
+      } else if (remOk) {
+        // Retomar el álbum compartido en que estaba (miembro).
+        updateCloudUI();
+        const a = myAlbums.find((x) => x.id === remembered.id);
+        await switchAlbum({ type: 'shared', id: a.id, name: a.name, ownerHandle: a.owner_handle });
+      } else {
+        if (remembered) localStorage.removeItem(LS_ALBUM);   // estaba pero ya no soy miembro
+        // Sync personal: combina la colección local con la del server por máximo.
+        const server = data.counts || {};
+        let changed = false;
+        album.stickers.forEach((s) => {
+          if (!s.sid) return;
+          const local = counts[s.key] || 0, srv = server[s.sid] || 0, mx = Math.max(local, srv);
+          if (mx !== local) { counts[s.key] = mx; changed = true; }
+        });
+        if (changed) saveJSON(LS_COUNTS, counts);
+        dirty = new Set(Object.keys(countsBySid()));   // subir todo lo combinado
+        saveJSON(LS_DIRTY, [...dirty]);
+        await flushDirty();
+        render();
+        updateCloudUI();
+      }
       loadNotifications();      // refresca campanita con la colección ya subida
       startNotifPolling();
       await processPendingInvite();   // ?add=<handle> (invitación de amigo)
       await loadFriendsData();
+      renderAlbumsSection();
       if (currentView === 'home') renderDashboard();
     } catch (e) { /* offline: seguimos en modo local */ }
   }
@@ -693,7 +746,7 @@
   function openFriends() {
     el('modalFriends').classList.add('open');
     updateCloudUI();
-    if (loggedIn()) renderFriends();
+    if (loggedIn()) { renderFriends(); loadMyAlbums().then(renderAlbumsSection); }
   }
 
   async function renderFriends() {
@@ -785,6 +838,288 @@
         } catch (e) { toast(e.message || 'No se pudo agregar al amigo'); }
       }
     }
+  }
+
+  // ===================================================================
+  // ==========   ÁLBUMES COMPARTIDOS (deltas + polling)   =============
+  // ===================================================================
+  function queueSharedDelta(key, delta) {
+    const sid = keyToSid[key];
+    if (!sid) return;
+    sharedPending[sid] = (sharedPending[sid] || 0) + delta;
+    clearTimeout(sharedFlushTimer);
+    sharedFlushTimer = setTimeout(flushSharedDeltas, 700);
+  }
+  async function flushSharedDeltas() {
+    if (!isShared() || !loggedIn()) return;
+    const id = currentAlbum.id;
+    const ops = Object.keys(sharedPending)
+      .map((sid) => ({ sid, delta: sharedPending[sid] }))
+      .filter((o) => o.delta !== 0);
+    if (!ops.length) return;
+    sharedPending = {};
+    try {
+      const r = await api('/albums/' + id + '/collection', { method: 'POST', body: { ops } });
+      if (r && r.ts) sharedSince = r.ts;
+      if (r && r.counts) applySharedCounts(r.counts, true);
+    } catch (e) {
+      // re-encolar para reintentar al próximo cambio/poll
+      ops.forEach((o) => { sharedPending[o.sid] = (sharedPending[o.sid] || 0) + o.delta; });
+    }
+  }
+  // Aplica un mapa {sid: qty} al estado compartido. No pisa sids con cambios
+  // locales sin enviar (sharedPending). Re-renderiza si algo cambió y rerender=true.
+  function applySharedCounts(countsBySidObj, rerender) {
+    let changed = false;
+    Object.keys(countsBySidObj || {}).forEach((sid) => {
+      if (sharedPending[sid]) return;             // cambio local pendiente: no pisar
+      const key = sidToKey[sid];
+      if (!key) return;
+      const qty = countsBySidObj[sid] | 0;
+      if ((sharedCounts[key] || 0) !== qty) {
+        if (qty === 0) delete sharedCounts[key]; else sharedCounts[key] = qty;
+        changed = true;
+      }
+    });
+    if (changed && rerender) render();
+    return changed;
+  }
+  function startAlbumPolling() {
+    stopAlbumPolling();
+    if (!isShared()) return;
+    albumPollTimer = setInterval(pollSharedAlbum, 12000);
+  }
+  function stopAlbumPolling() {
+    if (albumPollTimer) { clearInterval(albumPollTimer); albumPollTimer = null; }
+  }
+  async function pollSharedAlbum() {
+    if (!isShared() || !loggedIn()) return;
+    try {
+      await flushSharedDeltas();                  // primero envía lo pendiente
+      const id = currentAlbum.id;
+      // margen de 2s de solape: evita perder cambios del mismo segundo (ts en seg).
+      const since = sharedSince > 2 ? sharedSince - 2 : 0;
+      const r = await api('/albums/' + id + '/collection?since=' + since);
+      if (r && r.ts) sharedSince = r.ts;
+      if (r && r.counts) applySharedCounts(r.counts, true);
+    } catch (e) {
+      // Si me sacaron del álbum, volver al personal sin dejar el poll pegado.
+      if (String(e.message || '').indexOf('miembro') !== -1) {
+        toast('Ya no eres miembro de ese álbum');
+        await loadMyAlbums();
+        await switchAlbum({ type: 'personal' });
+      }
+      // otros errores (red): reintenta al próximo tick
+    }
+  }
+
+  async function switchAlbum(target) {
+    await flushSharedDeltas();                     // no perder lo pendiente del anterior
+    stopAlbumPolling();
+    if (target && target.type === 'shared') {
+      currentAlbum = { type: 'shared', id: target.id, name: target.name, ownerHandle: target.ownerHandle };
+      sharedCounts = {}; sharedPending = {}; sharedSince = 0;
+      try {
+        const r = await api('/albums/' + target.id + '/collection?since=0');
+        sharedSince = r.ts || 0;
+        applySharedCounts(r.counts || {}, false);
+      } catch (e) { toast('No se pudo cargar el álbum compartido'); }
+      startAlbumPolling();
+    } else {
+      currentAlbum = { type: 'personal' };
+      sharedCounts = {}; sharedPending = {}; sharedSince = 0;
+    }
+    // Recordar la elección entre recargas.
+    if (currentAlbum.type === 'shared') saveJSON(LS_ALBUM, { type: 'shared', id: currentAlbum.id, name: currentAlbum.name, ownerHandle: currentAlbum.ownerHandle });
+    else localStorage.removeItem(LS_ALBUM);
+    updateAlbumChip();
+    try { window.dispatchEvent(new Event('resize')); } catch {}   // re-sincroniza --header-h (el chip cambia la altura)
+    render();
+    renderAlbumsSection();
+  }
+
+  async function loadMyAlbums() {
+    if (!loggedIn()) { myAlbums = []; return; }
+    try { const d = await api('/albums/mine'); myAlbums = d.albums || []; }
+    catch (e) { myAlbums = []; }
+  }
+  function myOwnedAlbum() { return myAlbums.find((a) => a.role === 'owner') || null; }
+
+  function updateAlbumChip() {
+    const chip = el('albumChip');
+    if (!chip) return;
+    if (isShared()) {
+      chip.hidden = false;
+      chip.textContent = '👥 ' + (currentAlbum.name || 'Álbum compartido') + ' · cambiar';
+    } else {
+      chip.hidden = true;
+    }
+  }
+
+  function albumRow(o) {
+    let actions = '';
+    if (o.manage === 'owner') {
+      actions += `<button class="mini-btn alb-invite" data-id="${o.id}">👥 Invitar</button>`;
+      actions += `<button class="mini-btn alb-delete" data-id="${o.id}" title="Borrar álbum">🗑️</button>`;
+    } else if (o.manage === 'member') {
+      actions += `<button class="mini-btn alb-leave" data-id="${o.id}" data-name="${escapeHtml(o.name || '')}">Salir</button>`;
+    }
+    const data = o.kind === 'shared'
+      ? `data-kind="shared" data-id="${o.id}" data-name="${escapeHtml(o.name || '')}" data-owner="${escapeHtml(o.ownerHandle || '')}"`
+      : 'data-kind="personal"';
+    return `<div class="album-row${o.active ? ' active' : ''}">
+        <button class="album-pick" ${data}>
+          <div class="album-name">${o.title}${o.active ? ' ✓' : ''}</div>
+          <div class="album-sub">${escapeHtml(o.sub)}</div>
+        </button>${actions ? '<div class="album-actions">' + actions + '</div>' : ''}
+      </div>`;
+  }
+
+  function renderAlbumsSection() {
+    const wrap = el('albumsSection');
+    if (!wrap) return;
+    if (!loggedIn()) { wrap.hidden = true; wrap.innerHTML = ''; return; }
+    wrap.hidden = false;
+    const owned = myOwnedAlbum();
+    const joined = myAlbums.filter((a) => a.role !== 'owner');
+    let html = '<div class="drawer-sep">📚 Mis álbumes</div>';
+
+    if (owned) {   // mi álbum ya es compartido → no muestro "personal" aparte
+      html += albumRow({
+        title: '📒 ' + escapeHtml(owned.name),
+        sub: owned.members + ' miembro' + (owned.members !== 1 ? 's' : '') + ' · tú eres el dueño',
+        active: isShared() && currentAlbum.id === owned.id,
+        id: owned.id, kind: 'shared', name: owned.name, manage: 'owner',
+      });
+    } else {
+      html += albumRow({ title: '📒 Mi álbum', sub: 'Solo tuyo', active: !isShared(), kind: 'personal' });
+      html += '<button class="act-share" id="btnShareAlbum" style="width:100%;margin:6px 0 4px">📒 Compartir mi álbum con amigos</button>';
+      html += '<p class="hint" style="margin-top:2px">Los amigos que invites marcan láminas contigo en el mismo álbum: los cambios se ven al instante en todos.</p>';
+    }
+
+    joined.forEach((a) => {
+      html += albumRow({
+        title: '👥 ' + escapeHtml(a.name),
+        sub: 'de @' + a.owner_handle + ' · ' + a.members + ' miembro' + (a.members !== 1 ? 's' : ''),
+        active: isShared() && currentAlbum.id === a.id,
+        id: a.id, kind: 'shared', name: a.name, ownerHandle: a.owner_handle, manage: 'member',
+      });
+    });
+
+    wrap.innerHTML = html;
+    bindAlbumsSection();
+  }
+
+  function bindAlbumsSection() {
+    const wrap = el('albumsSection');
+    if (!wrap) return;
+    wrap.querySelectorAll('.album-pick').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.kind === 'personal') switchAlbum({ type: 'personal' });
+      else switchAlbum({ type: 'shared', id: +b.dataset.id, name: b.dataset.name, ownerHandle: b.dataset.owner });
+    }));
+    const sh = el('btnShareAlbum'); if (sh) sh.addEventListener('click', shareMyAlbum);
+    wrap.querySelectorAll('.alb-invite').forEach((b) => b.addEventListener('click', () => openAlbumInvite(+b.dataset.id)));
+    wrap.querySelectorAll('.alb-delete').forEach((b) => b.addEventListener('click', () => deleteAlbum(+b.dataset.id)));
+    wrap.querySelectorAll('.alb-leave').forEach((b) => b.addEventListener('click', () => leaveAlbum(+b.dataset.id, b.dataset.name)));
+  }
+
+  async function shareMyAlbum() {
+    if (!loggedIn()) return;
+    const ok = await confirmDialog(
+      'Tu álbum pasa a ser compartido: los amigos que invites marcarán láminas contigo y todos verán los mismos conteos. ¿Compartir?',
+      { ok: 'Compartir' }
+    );
+    if (!ok) return;
+    await flushDirty();   // asegura que el server tenga mi colección antes de compartir
+    try {
+      const r = await api('/albums/share', { method: 'POST' });
+      await loadMyAlbums();
+      await switchAlbum({ type: 'shared', id: r.album.id, name: r.album.name });
+      toast('¡Álbum compartido creado! ✓');
+      openAlbumInvite(r.album.id);   // sin invitados no sirve: abrir el picker al tiro
+    } catch (e) { toast(e.message || 'No se pudo compartir'); }
+  }
+
+  // Picker de invitación: miembros actuales (con "Sacar" para el dueño) +
+  // amigos aceptados que aún no están en el álbum.
+  async function openAlbumInvite(albumId) {
+    const body = el('albumInviteBody');
+    if (!body) return;
+    el('modalAlbumInvite').classList.add('open');
+    body.innerHTML = '<div class="hint">Cargando…</div>';
+    try {
+      const [fr, alb] = await Promise.all([api('/friends'), api('/albums/' + albumId)]);
+      if (fr) lastFriends = fr;
+      renderAlbumInvite(albumId, (fr && fr.friends) || [], (alb && alb.members) || []);
+    } catch (e) { body.innerHTML = '<p class="hint">No se pudo cargar. Intenta de nuevo.</p>'; }
+  }
+  function renderAlbumInvite(albumId, friends, members) {
+    const body = el('albumInviteBody');
+    const memberSet = new Set(members.map((m) => (m.handle || '').toLowerCase()));
+    let html = '<div class="drawer-sep">Miembros (' + members.length + ')</div>';
+    members.forEach((m) => {
+      const own = m.role === 'owner';
+      html += `<div class="friend-row"><div class="friend-name">${escapeHtml(m.name || m.handle)}
+          <div class="friend-handle">@${escapeHtml(m.handle)}${own ? ' · dueño' : ''}</div></div>
+        ${own ? '' : `<button class="mini-btn alb-kick" data-h="${escapeHtml(m.handle)}">Sacar</button>`}</div>`;
+    });
+    const invitable = friends.filter((f) => !memberSet.has((f.user.handle || '').toLowerCase()));
+    html += '<div class="drawer-sep">Invitar amigos</div>';
+    if (!invitable.length) {
+      html += '<p class="hint">Todos tus amigos ya están en el álbum. Puedes agregar más amigos en 👥 Amigos y después invitarlos.</p>';
+    } else {
+      invitable.forEach((f) => {
+        html += `<div class="friend-row"><div class="friend-name">${escapeHtml(f.user.name || f.user.handle)}
+            <div class="friend-handle">@${escapeHtml(f.user.handle)}</div></div>
+          <button class="fr-ok alb-add" data-h="${escapeHtml(f.user.handle)}">Invitar</button></div>`;
+      });
+    }
+    body.innerHTML = html;
+    body.querySelectorAll('.alb-add').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      try {
+        await api('/albums/' + albumId + '/invite', { method: 'POST', body: { handle: b.dataset.h } });
+        toast('¡Amigo sumado al álbum! ✓');
+        await loadMyAlbums();
+        renderAlbumsSection();
+        openAlbumInvite(albumId);   // refresca miembros/invitables
+      } catch (e) { b.disabled = false; toast(e.message || 'No se pudo invitar'); }
+    }));
+    body.querySelectorAll('.alb-kick').forEach((b) => b.addEventListener('click', async () => {
+      if (!(await confirmDialog('¿Sacar a @' + b.dataset.h + ' del álbum? Vuelve a su álbum personal y no pierde nada.', { ok: 'Sacar' }))) return;
+      try {
+        await api('/albums/' + albumId + '/kick', { method: 'POST', body: { handle: b.dataset.h } });
+        toast('Miembro removido');
+        await loadMyAlbums();
+        renderAlbumsSection();
+        openAlbumInvite(albumId);
+      } catch (e) { toast(e.message || 'No se pudo'); }
+    }));
+  }
+
+  async function deleteAlbum(id) {
+    const ok = await confirmDialog(
+      '¿Borrar este álbum compartido? Los miembros dejarán de verlo y vuelven a su álbum personal. Tu colección no se pierde.',
+      { ok: 'Borrar álbum', danger: true }
+    );
+    if (!ok) return;
+    try {
+      await api('/albums/' + id + '/delete', { method: 'POST' });
+      if (isShared() && currentAlbum.id === id) await switchAlbum({ type: 'personal' });
+      toast('Álbum borrado. Tu colección queda en tu álbum personal.');
+      await syncAfterLogin();   // re-sincroniza la colección personal (trae el pool final)
+    } catch (e) { toast(e.message || 'No se pudo'); }
+  }
+  async function leaveAlbum(id, name) {
+    const ok = await confirmDialog('¿Salir de "' + (name || 'este álbum') + '"? Vuelves a tu álbum personal.', { ok: 'Salir' });
+    if (!ok) return;
+    try {
+      await api('/albums/' + id + '/leave', { method: 'POST' });
+      if (isShared() && currentAlbum.id === id) await switchAlbum({ type: 'personal' });
+      toast('Saliste del álbum');
+      await loadMyAlbums();
+      renderAlbumsSection();
+    } catch (e) { toast(e.message || 'No se pudo'); }
   }
 
   async function viewMatches(h) {
@@ -992,6 +1327,8 @@
     refreshPushButton();
     const gate = el('friendsGate'); if (gate) gate.style.display = loggedIn() ? 'none' : '';
     const body = el('friendsBody'); if (body && !loggedIn()) body.innerHTML = '';
+    const as = el('albumsSection'); if (as && !loggedIn()) { as.hidden = true; as.innerHTML = ''; }
+    updateAlbumChip();
     const mc = el('myCode'); if (mc) mc.textContent = loggedIn() ? ('@' + me.handle) : '—';
     const av = el('hdrAvatarIni');
     if (av) av.textContent = loggedIn() ? ((me.name || me.handle || '·').trim().charAt(0).toUpperCase() || '·') : '·';
@@ -1060,7 +1397,7 @@
         <div class="ring" style="--p:${pct}"><span class="ring-val">${pct}%</span></div>
         <div class="dash-hero-info">
           <div class="dash-count">${st.have} / ${st.total}</div>
-          <div class="dash-sub">láminas en tu álbum</div>
+          <div class="dash-sub">${isShared() ? 'láminas en «' + escapeHtml(currentAlbum.name || 'álbum compartido') + '»' : 'láminas en tu álbum'}</div>
           <div class="dash-chips">
             <span class="dash-chip ok">✅ ${st.have}</span>
             <span class="dash-chip">⬜ ${st.missing}</span>
@@ -1084,6 +1421,23 @@
       });
     } else {
       html += `<div class="dash-empty">${(fr.friends || []).length ? 'Ninguna coincidencia nueva ahora.' : 'Agrega amigos para cambiar láminas.'}</div>`;
+    }
+    html += `</button>`;
+
+    html += `<button class="dash-card" id="dashAlbumCard">
+        <div class="dash-card-head">
+          <div class="dash-card-title"><span class="em">📒</span>Álbum compartido</div>
+          <span class="dash-chevron">›</span>
+        </div>`;
+    if (isShared()) {
+      const alb = myAlbums.find((a) => a.id === currentAlbum.id);
+      const nm = alb ? alb.members : 0;
+      html += `<div class="dash-row"><div class="dash-row-main">
+          <div class="dash-row-title">${escapeHtml(currentAlbum.name || 'Álbum compartido')}</div>
+          <div class="dash-row-sub">${nm} miembro${nm !== 1 ? 's' : ''} llenándolo juntos</div>
+        </div><span class="dash-pill green">activo</span></div>`;
+    } else {
+      html += `<div class="dash-empty">Compártelo con tu familia o amigos y llenen el mismo álbum entre todos.</div>`;
     }
     html += `</button>`;
 
@@ -1114,6 +1468,7 @@
     const w = (id, fn) => { const e = el(id); if (e) e.addEventListener('click', fn); };
     w('dashGoAlbum', () => showView('album'));
     w('dashFriendsCard', openFriends);
+    w('dashAlbumCard', openFriends);   // el switcher "Mis álbumes" vive en el drawer de Amigos
     w('dashNotifsCard', openNotifs);
     w('dashActLists', openLists);
     w('dashActInvite', inviteWhatsApp);
@@ -1178,6 +1533,7 @@
     const on = (id, ev, fn) => { const e = el(id); if (e) e.addEventListener(ev, fn); };
     on('btnHome', 'click', () => showView('home'));
     on('btnAlbum', 'click', () => showView('album'));
+    on('albumChip', 'click', openFriends);
     on('btnLists', 'click', openLists);
     on('hdrAvatar', 'click', openMenu);
     on('btnFriends', 'click', openFriends);
@@ -1257,9 +1613,10 @@
     else hideAppLoader();
     registerSW().then(refreshPushButton);   // prepara el Service Worker para push
   });
-  // Al volver a la pestaña/app, refresca la campanita.
+  // Al volver a la pestaña/app, refresca la campanita y el álbum compartido.
   window.addEventListener('focus', () => {
     if (!loggedIn()) return;
     loadNotifications();
+    if (isShared()) pollSharedAlbum();
   });
 })();

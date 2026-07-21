@@ -589,6 +589,10 @@ body.gated { overflow: hidden; }
 .lp-foot p { margin: 6px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
 .lp-foot a { display: inline-block; padding: 6px 4px; color: var(--accent-2); font-weight: 700; }
 @media (max-width: 360px) { .lp-feats { grid-template-columns: 1fr; } }
+@media (min-width: 992px) {
+  .landing { max-width: 760px; }
+  .lp-feats { grid-template-columns: repeat(4, 1fr); }
+}
 
 /* About modal */
 .about-story p { margin: 0 0 10px; font-size: .88rem; line-height: 1.55; color: var(--text); }

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pelota de fútbol">
+  <circle cx="32" cy="32" r="29" fill="#ffffff" stroke="#14162c" stroke-width="3"/>
+  <path d="M32,22 L41.51,28.91 L37.88,40.09 L26.12,40.09 L22.49,28.91 Z" fill="#14162c"/>
+  <g stroke="#14162c" stroke-width="2.6" stroke-linecap="round">
+    <line x1="32" y1="22" x2="32" y2="5"/>
+    <line x1="41.51" y1="28.91" x2="57.68" y2="23.66"/>
+    <line x1="37.88" y1="40.09" x2="47.88" y2="53.84"/>
+    <line x1="26.12" y1="40.09" x2="16.12" y2="53.84"/>
+    <line x1="22.49" y1="28.91" x2="6.32" y2="23.66"/>
+  </g>
+</svg>

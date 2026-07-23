@@ -600,8 +600,11 @@ body.gated { overflow: hidden; }
 @media (max-width: 360px) { .lp-feats { grid-template-columns: 1fr; } }
 @media (max-width: 360px) { .lp-trust-row { font-size: .88rem; } }
 @media (min-width: 992px) {
-  .landing { max-width: 760px; }
-  .lp-feats { grid-template-columns: repeat(4, 1fr); }
+  .landing { max-width: 860px; }
+  .lp-feats { grid-template-columns: repeat(4, 1fr); gap: 18px; }
+}
+@media (min-width: 1440px) {
+  .landing { max-width: 1040px; }
 }
 
 /* About modal */

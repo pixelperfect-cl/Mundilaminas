@@ -14,19 +14,20 @@
   <meta property="og:title" content="Mundiláminas · Tu álbum del Mundial 2026, gratis y sin publicidad" />
   <meta property="og:description" content="Colecciona e intercambia las láminas del Mundial 2026 con tus amigos. Marca tus faltantes y repetidas y cruza colecciones. 100% gratis y sin un solo aviso." />
   <meta property="og:url" content="https://mundilaminas.cl/" />
-  <meta property="og:image" content="https://mundilaminas.cl/icon-512.png?v=20260718a" />
+  <meta property="og:image" content="https://mundilaminas.cl/icon-512.png?v=20260723b" />
   <meta property="og:image:width" content="512" />
   <meta property="og:image:height" content="512" />
   <meta property="og:locale" content="es_CL" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Mundiláminas · Tu álbum del Mundial 2026, gratis y sin publicidad" />
   <meta name="twitter:description" content="Colecciona e intercambia las láminas del Mundial 2026 con tus amigos. 100% gratis y sin publicidad." />
-  <meta name="twitter:image" content="https://mundilaminas.cl/icon-512.png?v=20260718a" />
+  <meta name="twitter:image" content="https://mundilaminas.cl/icon-512.png?v=20260723b" />
 
-  <link rel="manifest" href="manifest.webmanifest?v=20260718a" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=20260718a" />
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=20260718a" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260718a" />
+  <link rel="manifest" href="manifest.webmanifest?v=20260723b" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260723b" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=20260723b" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=20260723b" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260723b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Mundiláminas" />
@@ -627,7 +628,16 @@ body.gated { overflow: hidden; }
 .lp-sub { margin: 7px 0 0; color: #bcc3e6; font-weight: 700; font-size: .74rem; letter-spacing: .22em; text-transform: uppercase; }
 .lp-tagline { margin: 15px auto 0; max-width: 420px; font-size: 1.08rem; line-height: 1.45; color: var(--text); }
 .lp-tagline b { color: var(--green); }
-.lp-trust-row { margin: 13px 0 0; color: var(--muted); font-size: .78rem; font-weight: 700; }
+.lp-trust-row {
+  margin: 16px auto 0; max-width: 440px;
+  color: var(--green); font-size: clamp(.92rem, 3.4vw, 1.08rem); font-weight: 800; letter-spacing: .01em;
+  text-shadow: 0 0 10px rgba(43, 213, 138, .3);
+  animation: lpTrustGlow 2.8s ease-in-out infinite;
+}
+@keyframes lpTrustGlow {
+  0%, 100% { text-shadow: 0 0 6px rgba(43, 213, 138, .22); }
+  50% { text-shadow: 0 0 18px rgba(43, 213, 138, .6); }
+}
 .lp-cta { margin-top: 22px; }
 .lp-cta-lead { margin: 0 0 12px; font-size: 1.02rem; font-weight: 800; color: var(--text); }
 .lp-cta-trust { margin: 12px auto 0; max-width: 400px; color: var(--muted); font-size: .78rem; line-height: 1.5; }
@@ -681,6 +691,14 @@ body.gated { overflow: hidden; }
 .lp-foot p { margin: 6px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
 .lp-foot a { display: inline-block; padding: 6px 4px; color: var(--accent-2); font-weight: 700; }
 @media (max-width: 360px) { .lp-feats { grid-template-columns: 1fr; } }
+@media (max-width: 360px) { .lp-trust-row { font-size: .88rem; } }
+@media (min-width: 992px) {
+  .landing { max-width: 860px; }
+  .lp-feats { grid-template-columns: repeat(4, 1fr); gap: 18px; }
+}
+@media (min-width: 1440px) {
+  .landing { max-width: 1040px; }
+}
 
 /* About modal */
 .about-story p { margin: 0 0 10px; font-size: .88rem; line-height: 1.55; color: var(--text); }
@@ -760,6 +778,7 @@ body.gated { overflow: hidden; }
         <p class="lp-tagline">Junta, cambia y completa tu álbum del Mundial — <b>gratis</b> y sin una sola publicidad.</p>
         <p class="lp-trust-row">✓ 100% gratis&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin publicidad&nbsp;&nbsp;·&nbsp;&nbsp;✓ sin compras</p>
         <div class="lp-cta">
+          <button class="lp-cta-up lp-start-btn" id="lpStartHero">⚽ Empezar gratis</button>
           <p class="lp-cta-lead">Crea tu álbum gratis en un toque</p>
           <div class="gate-btn" id="gateBtn"></div>
           <p class="gate-loading" id="gateLoading">Cargando inicio de sesión…</p>
@@ -786,7 +805,7 @@ body.gated { overflow: hidden; }
       </section>
 
       <footer class="lp-foot">
-        <button class="lp-cta-up" id="lpStart">⚽ Empezar gratis</button>
+        <button class="lp-cta-up lp-start-btn" id="lpStart">⚽ Empezar gratis</button>
         <p>Hecho por un papá para su hijo —y para todos los que están llenando el álbum—. Un proyecto personal, sin publicidad.</p>
         <p>¿Ideas o problemas? Escríbeme a <a href="mailto:emilio@pixelperfect.cl">emilio@pixelperfect.cl</a></p>
         <p class="lp-disclaimer">App no oficial. No afiliada, respaldada ni patrocinada por FIFA ni Panini.</p>
@@ -2565,7 +2584,7 @@ window.ALBUM_CONFIG = {
   }
   async function registerSW() {
     if (!('serviceWorker' in navigator)) return null;
-    try { swReg = await navigator.serviceWorker.register('sw.js?v=20260718a'); return swReg; }
+    try { swReg = await navigator.serviceWorker.register('sw.js?v=20260723b'); return swReg; }
     catch (e) { return null; }
   }
   function urlB64ToUint8Array(base64) {
@@ -2917,7 +2936,7 @@ window.ALBUM_CONFIG = {
       });
     });
     { const ab = el('btnAbout'); if (ab) ab.addEventListener('click', openAbout); }
-    { const lp = el('lpStart'); if (lp) lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); }
+    document.querySelectorAll('.lp-start-btn').forEach((lp) => { lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); });
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
     document.querySelectorAll('.modal-back').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModals(); }));
 

@@ -1234,7 +1234,7 @@
   }
   async function registerSW() {
     if (!('serviceWorker' in navigator)) return null;
-    try { swReg = await navigator.serviceWorker.register('sw.js?v=20260718a'); return swReg; }
+    try { swReg = await navigator.serviceWorker.register('sw.js?v=20260723b'); return swReg; }
     catch (e) { return null; }
   }
   function urlB64ToUint8Array(base64) {
@@ -1586,7 +1586,7 @@
       });
     });
     { const ab = el('btnAbout'); if (ab) ab.addEventListener('click', openAbout); }
-    { const lp = el('lpStart'); if (lp) lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); }
+    document.querySelectorAll('.lp-start-btn').forEach((lp) => { lp.addEventListener('click', () => { const g = el('loginGate'); if (g) g.scrollTo({ top: 0, behavior: 'smooth' }); promptGoogle(); }); });
     document.querySelectorAll('[data-close]').forEach((x) => x.addEventListener('click', closeModals));
     document.querySelectorAll('.modal-back').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModals(); }));
 

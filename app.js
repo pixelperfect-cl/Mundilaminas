@@ -940,6 +940,13 @@
     renderAlbumsSection();
   }
 
+  // Entrar a un álbum desde el home: cambia el álbum activo y lleva a la grilla.
+  async function enterAlbumFromHome(target) {
+    await switchAlbum(target);
+    showView('album');
+    if (target.type === 'shared') toast('Entraste al álbum compartido ✓');
+  }
+
   async function loadMyAlbums() {
     if (!loggedIn()) { myAlbums = []; return; }
     try { const d = await api('/albums/mine'); myAlbums = d.albums || []; }
@@ -1368,7 +1375,7 @@
     setNavActive(home ? 'btnHome' : 'btnAlbum');
     if (home) {
       renderDashboard();
-      loadFriendsData().then(() => { if (currentView === 'home') renderDashboard(); });
+      Promise.all([loadFriendsData(), loadMyAlbums()]).then(() => { if (currentView === 'home') renderDashboard(); });
       window.scrollTo(0, 0);
     }
     try { window.dispatchEvent(new Event('resize')); } catch {}   // recalcula --header-h
@@ -1426,22 +1433,54 @@
     }
     html += `</button>`;
 
-    html += `<button class="dash-card" id="dashAlbumCard">
+    // Álbum compartido: lista TODOS tus álbumes (los que posees + los que te
+    // compartieron) con entrada de 1 toque. Antes solo reflejaba el álbum activo,
+    // así que a un miembro recién invitado no le aparecía por ningún lado.
+    const ownedAlb = myOwnedAlbum();
+    const joinedAlbs = myAlbums.filter((a) => a.role !== 'owner');
+    const hasAlbums = ownedAlb || joinedAlbs.length;
+    html += `<div class="dash-card">
         <div class="dash-card-head">
           <div class="dash-card-title"><span class="em">📒</span>Álbum compartido</div>
-          <span class="dash-chevron">›</span>
+          ${hasAlbums ? '<button class="dash-mini-link" id="dashAlbumManage">Gestionar</button>' : '<span class="dash-chevron">›</span>'}
         </div>`;
-    if (isShared()) {
-      const alb = myAlbums.find((a) => a.id === currentAlbum.id);
-      const nm = alb ? alb.members : 0;
-      html += `<div class="dash-row"><div class="dash-row-main">
-          <div class="dash-row-title">${escapeHtml(currentAlbum.name || 'Álbum compartido')}</div>
-          <div class="dash-row-sub">${nm} miembro${nm !== 1 ? 's' : ''} llenándolo juntos</div>
-        </div><span class="dash-pill green">activo</span></div>`;
+    if (!hasAlbums) {
+      html += `<div class="dash-empty">Compártelo con tu familia o amigos y llenen el mismo álbum entre todos.</div>
+        <button class="dash-share-btn" id="dashShareAlbum">📒 Compartir mi álbum</button>`;
     } else {
-      html += `<div class="dash-empty">Compártelo con tu familia o amigos y llenen el mismo álbum entre todos.</div>`;
+      const albRow = (o) => `<button class="dash-album-row${o.active ? ' active' : ''}" ${o.attrs}>
+          <div class="dash-row-main">
+            <div class="dash-row-title">${o.title}</div>
+            <div class="dash-row-sub">${o.sub}</div>
+          </div>
+          <span class="dash-pill${o.active ? ' green' : ''}">${o.active ? 'activo' : 'entrar'}</span>
+        </button>`;
+      if (ownedAlb) {
+        html += albRow({
+          active: isShared() && currentAlbum.id === ownedAlb.id,
+          title: '📒 ' + escapeHtml(ownedAlb.name),
+          sub: ownedAlb.members + ' miembro' + (ownedAlb.members !== 1 ? 's' : '') + ' · tú eres el dueño',
+          attrs: `data-album="${ownedAlb.id}" data-name="${escapeHtml(ownedAlb.name)}"`,
+        });
+      } else {
+        html += albRow({
+          active: !isShared(),
+          title: '📕 Mi álbum',
+          sub: 'solo tuyo',
+          attrs: 'data-personal="1"',
+        });
+      }
+      joinedAlbs.forEach((a) => {
+        const who = a.owner_name ? escapeHtml(a.owner_name) : ('@' + escapeHtml(a.owner_handle || ''));
+        html += albRow({
+          active: isShared() && currentAlbum.id === a.id,
+          title: '👥 Álbum Compartido de ' + who,
+          sub: a.members + ' miembro' + (a.members !== 1 ? 's' : ''),
+          attrs: `data-album="${a.id}" data-name="${escapeHtml(a.name)}" data-owner="${escapeHtml(a.owner_handle || '')}"`,
+        });
+      });
     }
-    html += `</button>`;
+    html += `</div>`;
 
     html += `<button class="dash-card" id="dashNotifsCard">
         <div class="dash-card-head">
@@ -1470,7 +1509,12 @@
     const w = (id, fn) => { const e = el(id); if (e) e.addEventListener('click', fn); };
     w('dashGoAlbum', () => showView('album'));
     w('dashFriendsCard', openFriends);
-    w('dashAlbumCard', openFriends);   // el switcher "Mis álbumes" vive en el drawer de Amigos
+    w('dashAlbumManage', openFriends);   // invitar/salir/borrar vive en el drawer de Amigos
+    w('dashShareAlbum', shareMyAlbum);
+    wrap.querySelectorAll('.dash-album-row').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.personal) enterAlbumFromHome({ type: 'personal' });
+      else enterAlbumFromHome({ type: 'shared', id: +b.dataset.album, name: b.dataset.name, ownerHandle: b.dataset.owner });
+    }));
     w('dashNotifsCard', openNotifs);
     w('dashActLists', openLists);
     w('dashActInvite', inviteWhatsApp);

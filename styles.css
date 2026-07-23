@@ -461,6 +461,22 @@ button.dash-card:active { transform: scale(.992); }
 .dash-pill { font-size: var(--fs-xs); font-weight: 800; padding: 3px 9px; border-radius: var(--r-pill); background: var(--accent-soft); color: #d2ccff; flex: none; }
 .dash-pill.green { background: rgba(43,213,138,.18); color: #cdebd9; }
 .dash-empty { color: var(--muted); font-size: var(--fs-sm); margin-top: 8px; }
+.dash-album-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 0 0; margin-top: 9px; border: 0; border-top: 1px solid var(--hair);
+  background: none; color: inherit; font: inherit; cursor: pointer;
+}
+.dash-album-row:active { transform: scale(.992); }
+.dash-album-row.active .dash-row-title { color: var(--green); }
+.dash-mini-link {
+  border: 0; background: none; color: var(--accent-2); font-weight: 700;
+  font-size: var(--fs-xs); cursor: pointer; padding: 2px 4px; flex: none;
+}
+.dash-share-btn {
+  width: 100%; margin-top: 10px; padding: 10px; border: 0; border-radius: var(--r-pill);
+  background: var(--accent-soft); color: #d2ccff; font-weight: 800; font-size: var(--fs-sm); cursor: pointer;
+}
+.dash-share-btn:active { transform: scale(.98); }
 .dash-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
 .dash-action {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;

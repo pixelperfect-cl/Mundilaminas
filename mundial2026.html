@@ -567,7 +567,16 @@ body.gated { overflow: hidden; }
 .lp-sub { margin: 7px 0 0; color: #bcc3e6; font-weight: 700; font-size: .74rem; letter-spacing: .22em; text-transform: uppercase; }
 .lp-tagline { margin: 15px auto 0; max-width: 420px; font-size: 1.08rem; line-height: 1.45; color: var(--text); }
 .lp-tagline b { color: var(--green); }
-.lp-trust-row { margin: 13px 0 0; color: var(--muted); font-size: .78rem; font-weight: 700; }
+.lp-trust-row {
+  margin: 16px auto 0; max-width: 440px;
+  color: var(--green); font-size: clamp(.92rem, 3.4vw, 1.08rem); font-weight: 800; letter-spacing: .01em;
+  text-shadow: 0 0 10px rgba(43, 213, 138, .3);
+  animation: lpTrustGlow 2.8s ease-in-out infinite;
+}
+@keyframes lpTrustGlow {
+  0%, 100% { text-shadow: 0 0 6px rgba(43, 213, 138, .22); }
+  50% { text-shadow: 0 0 18px rgba(43, 213, 138, .6); }
+}
 .lp-cta { margin-top: 22px; }
 .lp-cta-lead { margin: 0 0 12px; font-size: 1.02rem; font-weight: 800; color: var(--text); }
 .lp-cta-trust { margin: 12px auto 0; max-width: 400px; color: var(--muted); font-size: .78rem; line-height: 1.5; }
@@ -621,6 +630,7 @@ body.gated { overflow: hidden; }
 .lp-foot p { margin: 6px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
 .lp-foot a { display: inline-block; padding: 6px 4px; color: var(--accent-2); font-weight: 700; }
 @media (max-width: 360px) { .lp-feats { grid-template-columns: 1fr; } }
+@media (max-width: 360px) { .lp-trust-row { font-size: .88rem; } }
 
 /* About modal */
 .about-story p { margin: 0 0 10px; font-size: .88rem; line-height: 1.55; color: var(--text); }

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#6c5ce7" />
   <title>Mundiláminas · Completa tu álbum del Mundial 2026 intercambiando con amigos</title>
   <meta name="description" content="Mundiláminas: app gratis y sin publicidad para coleccionar e intercambiar las láminas del Mundial 2026. Marca las que tienes, las que te faltan y tus repetidas, y crúzalas con tus amigos." />
@@ -31,7 +31,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Mundiláminas" />
-  <link rel="stylesheet" href="styles.css?v=20260723c" />
+  <link rel="stylesheet" href="styles.css?v=20260723d" />
 
   <!-- Loader de arranque (foil splash). CSS crítico inline para que pinte al instante,
        antes de que descargue styles.css. Autocontenido (clases ldr-*, keyframes propios). -->
@@ -271,8 +271,8 @@
   <div class="modal-back" id="modalAlbumInvite">
     <div class="modal">
       <button class="close-x" data-close aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
-      <h2>📒 Tu álbum compartido</h2>
-      <p class="hint">Los amigos que invites entran directo al álbum: marcan láminas contigo y todos ven los mismos conteos. Solo puedes invitar a amigos ya agregados.</p>
+      <h2 id="albumInviteTitle">👥 Miembros del álbum</h2>
+      <p class="hint" id="albumInviteHint">Invita a tus amigos o sácalos del álbum.</p>
       <div id="albumInviteBody"></div>
     </div>
   </div>
@@ -363,6 +363,6 @@
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="data.js?v=20260701b"></script>
-  <script src="app.js?v=20260723c"></script>
+  <script src="app.js?v=20260723d"></script>
 </body>
 </html>

@@ -968,9 +968,10 @@
   function albumRow(o) {
     let actions = '';
     if (o.manage === 'owner') {
-      actions += `<button class="mini-btn alb-invite" data-id="${o.id}">👥 Invitar</button>`;
+      actions += `<button class="mini-btn alb-members" data-id="${o.id}">👥 Miembros</button>`;
       actions += `<button class="mini-btn alb-delete" data-id="${o.id}" title="Borrar álbum">🗑️</button>`;
     } else if (o.manage === 'member') {
+      actions += `<button class="mini-btn alb-members" data-id="${o.id}">👥 Miembros</button>`;
       actions += `<button class="mini-btn alb-leave" data-id="${o.id}" data-name="${escapeHtml(o.name || '')}">Salir</button>`;
     }
     const data = o.kind === 'shared'
@@ -1027,7 +1028,7 @@
       else switchAlbum({ type: 'shared', id: +b.dataset.id, name: b.dataset.name, ownerHandle: b.dataset.owner });
     }));
     const sh = el('btnShareAlbum'); if (sh) sh.addEventListener('click', shareMyAlbum);
-    wrap.querySelectorAll('.alb-invite').forEach((b) => b.addEventListener('click', () => openAlbumInvite(+b.dataset.id)));
+    wrap.querySelectorAll('.alb-members').forEach((b) => b.addEventListener('click', () => openAlbumInvite(+b.dataset.id)));
     wrap.querySelectorAll('.alb-delete').forEach((b) => b.addEventListener('click', () => deleteAlbum(+b.dataset.id)));
     wrap.querySelectorAll('.alb-leave').forEach((b) => b.addEventListener('click', () => leaveAlbum(+b.dataset.id, b.dataset.name)));
   }
@@ -1049,39 +1050,51 @@
     } catch (e) { toast(e.message || 'No se pudo compartir'); }
   }
 
-  // Picker de invitación: miembros actuales (con "Sacar" para el dueño) +
-  // amigos aceptados que aún no están en el álbum.
+  // Panel de miembros: roster del álbum. El DUEÑO además puede invitar amigos
+  // aceptados y sacar miembros; un MIEMBRO solo ve quiénes están (lectura).
   async function openAlbumInvite(albumId) {
     const body = el('albumInviteBody');
     if (!body) return;
+    const isOwner = ((myAlbums.find((a) => a.id === albumId) || {}).role === 'owner');
+    const titleEl = el('albumInviteTitle'); if (titleEl) titleEl.textContent = '👥 Miembros del álbum';
+    const hintEl = el('albumInviteHint');
+    if (hintEl) hintEl.textContent = isOwner
+      ? 'Invita a tus amigos o sácalos del álbum. Los que invites marcan láminas contigo y todos ven los mismos conteos.'
+      : 'Estos son los que llenan el álbum contigo. Solo el dueño puede invitar o sacar miembros.';
     el('modalAlbumInvite').classList.add('open');
     body.innerHTML = '<div class="hint">Cargando…</div>';
     try {
-      const [fr, alb] = await Promise.all([api('/friends'), api('/albums/' + albumId)]);
+      const [fr, alb] = await Promise.all([
+        isOwner ? api('/friends') : Promise.resolve(null),
+        api('/albums/' + albumId),
+      ]);
       if (fr) lastFriends = fr;
-      renderAlbumInvite(albumId, (fr && fr.friends) || [], (alb && alb.members) || []);
+      renderAlbumInvite(albumId, (fr && fr.friends) || [], (alb && alb.members) || [], isOwner);
     } catch (e) { body.innerHTML = '<p class="hint">No se pudo cargar. Intenta de nuevo.</p>'; }
   }
-  function renderAlbumInvite(albumId, friends, members) {
+  function renderAlbumInvite(albumId, friends, members, isOwner) {
     const body = el('albumInviteBody');
     const memberSet = new Set(members.map((m) => (m.handle || '').toLowerCase()));
     let html = '<div class="drawer-sep">Miembros (' + members.length + ')</div>';
     members.forEach((m) => {
       const own = m.role === 'owner';
+      const canKick = isOwner && !own;
       html += `<div class="friend-row"><div class="friend-name">${escapeHtml(m.name || m.handle)}
           <div class="friend-handle">@${escapeHtml(m.handle)}${own ? ' · dueño' : ''}</div></div>
-        ${own ? '' : `<button class="mini-btn alb-kick" data-h="${escapeHtml(m.handle)}">Sacar</button>`}</div>`;
+        ${canKick ? `<button class="mini-btn alb-kick" data-h="${escapeHtml(m.handle)}">Sacar</button>` : ''}</div>`;
     });
-    const invitable = friends.filter((f) => !memberSet.has((f.user.handle || '').toLowerCase()));
-    html += '<div class="drawer-sep">Invitar amigos</div>';
-    if (!invitable.length) {
-      html += '<p class="hint">Todos tus amigos ya están en el álbum. Puedes agregar más amigos en 👥 Amigos y después invitarlos.</p>';
-    } else {
-      invitable.forEach((f) => {
-        html += `<div class="friend-row"><div class="friend-name">${escapeHtml(f.user.name || f.user.handle)}
-            <div class="friend-handle">@${escapeHtml(f.user.handle)}</div></div>
-          <button class="fr-ok alb-add" data-h="${escapeHtml(f.user.handle)}">Invitar</button></div>`;
-      });
+    if (isOwner) {
+      const invitable = friends.filter((f) => !memberSet.has((f.user.handle || '').toLowerCase()));
+      html += '<div class="drawer-sep">Invitar amigos</div>';
+      if (!invitable.length) {
+        html += '<p class="hint">Todos tus amigos ya están en el álbum. Puedes agregar más amigos en 👥 Amigos y después invitarlos.</p>';
+      } else {
+        invitable.forEach((f) => {
+          html += `<div class="friend-row"><div class="friend-name">${escapeHtml(f.user.name || f.user.handle)}
+              <div class="friend-handle">@${escapeHtml(f.user.handle)}</div></div>
+            <button class="fr-ok alb-add" data-h="${escapeHtml(f.user.handle)}">Invitar</button></div>`;
+        });
+      }
     }
     body.innerHTML = html;
     body.querySelectorAll('.alb-add').forEach((b) => b.addEventListener('click', async () => {
@@ -1698,6 +1711,15 @@
   captureInviteParams();   // lee ?add=<handle> antes del login para procesarlo después
   rebuildSidMaps();
   bind();
+
+  // Bloquear pinch-zoom (evita el zoom accidental con dos dedos). El viewport
+  // user-scalable=no + touch-action del CSS lo cubren en Chrome/Android/TWA;
+  // iOS Safari ignora user-scalable, así que hay que frenar los gestos a mano.
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((ev) =>
+    document.addEventListener(ev, (e) => e.preventDefault(), { passive: false }));
+  document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 1) e.preventDefault();   // 2+ dedos = pinch
+  }, { passive: false });
   // a11y: marca los paneles como diálogos y permite cerrarlos con ESC.
   document.querySelectorAll('.modal-back > .modal').forEach((m) => {
     m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');

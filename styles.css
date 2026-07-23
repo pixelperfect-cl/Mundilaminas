@@ -39,7 +39,13 @@ button:focus:not(:focus-visible) { outline: none; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 /* overscroll: sin pull-to-refresh ni rebote de borde (sensación de app, no de navegador) */
-html, body { margin: 0; padding: 0; overscroll-behavior-y: none; }
+/* touch-action pan-x/pan-y: permite scroll pero BLOQUEA el pinch-zoom y el zoom por doble-tap.
+   text-size-adjust: evita que iOS agrande el texto solo. */
+html, body {
+  margin: 0; padding: 0; overscroll-behavior-y: none;
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+}
 body {
   background: var(--bg);
   color: var(--text);
